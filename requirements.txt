@@ -1,0 +1,17 @@
+# face_detection.py: 2
+# face_points_detection.py: 4
+# main.py: 4
+dlib == 19.9.0
+
+# face_swap.py: 6
+# main.py: 7
+numpy == 1.13.1
+
+# face_detection.py: 1
+# face_points_detection.py: 3
+# face_swap.py: 3
+# main.py: 3
+opencv == 3.4.0.12
+
+# face_swap.py: 7
+scipy == 0.18.0
