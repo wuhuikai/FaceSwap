@@ -40,5 +40,5 @@ Note: Run **python main.py -h** for more details.
 | ![](imgs/test4.jpg) | ![](results/output6_4.jpg) |
 | ![](imgs/test3.jpg) | ![](results/output6_3.jpg) |
 | ![](imgs/test2.jpg) | ![](results/output6_2_2d.jpg) |
-| ![](imgs/test4.jpg) | ![](results/output6_4.jpg) |
-| ![](imgs/test4.jpg) | ![](results/output6_4.jpg) |
+| ![](imgs/test1.jpg) | ![](results/output6_1.jpg) |
+| ![](imgs/test4.jpg) | ![](results/output7_4.jpg) |
