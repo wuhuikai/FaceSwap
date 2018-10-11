@@ -61,6 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--out', required=True, help='Path for storing output images')
     parser.add_argument('--warp_2d', default=False, action='store_true', help='2d or 3d warp')
     parser.add_argument('--correct_color', default=False, action='store_true', help='Correct color')
+    parser.add_argument('--no_debug_window', default=False, action='store_true', help='Don\'t show debug window')
     args = parser.parse_args()
 
     # Read images
@@ -120,8 +121,9 @@ if __name__ == '__main__':
     cv2.imwrite(args.out, output)
 
     ##For debug
-    cv2.imshow("From", dst_img)
-    cv2.imshow("To", output)
-    cv2.waitKey(0)
-    
-    cv2.destroyAllWindows()
+    if not args.no_debug_window:
+        cv2.imshow("From", dst_img)
+        cv2.imshow("To", output)
+        cv2.waitKey(0)
+        
+        cv2.destroyAllWindows()
