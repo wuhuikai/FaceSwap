@@ -163,10 +163,7 @@ def apply_mask(img, mask):
     :param mask: [0-255] values in mask
     :returns: new image with mask applied
     """
-    masked_img = np.copy(img)
-    num_channels = 3
-    for c in range(num_channels):
-        masked_img[..., c] = img[..., c] * (mask / 255)
+    masked_img=cv2.bitwise_and(img,img,mask=mask)
 
     return masked_img
 
