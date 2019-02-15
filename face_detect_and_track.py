@@ -8,45 +8,57 @@ from config import *
 logging.basicConfig(level=logging.DEBUG,format="%(levelname)s:%(lineno)d:%(message)s")
 
 
-
 class Detector(object):
     def __init__(self):
-        self.dlib_detector = dlib.get_frontal_face_detector()
-        self.cascade_detector = cv2.CascadeClassifier(CASCADE_PATH)
-        self.predictor = dlib.shape_predictor(PREDICTOR_PATH)
+        self.detector = cv2.CascadeClassifier(CASCADE_PATH)
+
+    def face_detection(self,frame):
+        face_rects = self.__get_face_rects(frame)
+        if not isinstance(face_rects, np.ndarray):
+            logging.info("No face")
+            return 0
+
+        if not len(face_rects) == 1:
+            logging.info("Too many face")
+            return 0
+
+        return face_rects[0]
 
 
-
-    def dlib_get_rects(self,img):
-        # To get faster speed, I recommend the param upsample_num_times == 0
-        face_rects = self.dlib_detector(img, 0)
-        if not face_rects:
-            return None  # face_rects=None
-        return face_rects
-
-
-    def cascade_get_rects(self,img):
+    def __get_face_rects(self,img):
         # 1.3 5
-        face_rects = self.cascade_detector.detectMultiScale(img, scaleFactor=1.1, minNeighbors=2,flags=cv2.CASCADE_SCALE_IMAGE,minSize=(120,120))  
+        face_rects = self.detector.detectMultiScale(img, scaleFactor=1.1, minNeighbors=2,flags=cv2.CASCADE_SCALE_IMAGE,minSize=(120,120))  
         # face_rect:ndarray
         if face_rects == ():
             return None
         return face_rects
 
 
+
+class DlibDetector(object):
+    def __init__(self):
+        self.detector = dlib.get_frontal_face_detector()
+        
+    def __get_face_rects(self,img,upsample_num_times=0):
+        # To get faster speed, I recommend the param upsample_num_times == 0
+        face_rects = self.detector(img, upsample_num_times)
+        if not face_rects:
+            return None  # face_rects=None
+        return face_rects
+    
     def rect_to_bb(self,rect: dlib.rectangle):
         x = rect.left()
         y = rect.top()
         w = rect.right() - x
         h = rect.bottom() - y
         return (x, y, w, h)
-
-
+    
     def dlib_method_test(self):
+        cap=cv2.VideoCapture(0)
         while (cv2.waitKey(1) != 27):
             start_t = cv2.getTickCount()
-            grabbed, frame = self.cap.read()
-            face_rects = self.dlib_get_rects(frame)
+            grabbed, frame = cap.read()
+            face_rects = self.__get_face_rects(frame)
             if not face_rects:
                 logging.info("No face")
                 cv2.imshow("output", frame)
@@ -62,8 +74,8 @@ class Detector(object):
             logging.info("fps: {0}".format(fps))
 
 
-    def dlib_method(self,frame):
-        face_rects = self.dlib_get_rects(frame)
+    def face_detection(self,frame,upsample_times=0):
+        face_rects = self.__get_face_rects(frame,upsample_times)
         if not face_rects:
             logging.info("No face")
             return 0
@@ -73,23 +85,11 @@ class Detector(object):
             return 0
 
         return self.rect_to_bb(face_rects[0])
-
-    def cascade_method(self,frame):
-        face_rects = self.cascade_get_rects(frame)
-        if not isinstance(face_rects,np.ndarray):
-            logging.info("No face")
-            return 0
-
-        if not len(face_rects) == 1:
-            logging.info("Too many face")
-            return 0
-
-        return face_rects[0]
-
+    
 class Tracker(object):
     """docstring for Tracker"""
-    def __init__(self, arg="mosse"):
-        self.tracker = OPENCV_OBJECT_TRACKERS[arg]()
+    def __init__(self, tracker_type="mosse"):
+        self.tracker = OPENCV_OBJECT_TRACKERS[tracker_type]()
 
     # def start_track(self,frame,starX,startY,endX,endY):
     #     self.tracker.init(frame,(starX,startY,endX,endY))
@@ -110,23 +110,27 @@ class Tracker(object):
     def clear(self):
         return self.tracker.clear()
 def expand_bbox(x,y,w,h):
-    x=np.max([0,x-int(w*0.15)])
-    y=np.max([0,y-int(h*0.15)])
-    w=int(w*1.3)
-    h=int(h*1.3)
+    x=np.max([0,x-int(w*0.10)])
+    y=np.max([0,y-int(h*0.10)])
+    w=int(w*1.2)
+    h=int(h*1.2)
     return (x,y,w,h)
 if __name__ == '__main__':
     d=Detector()
     t=Tracker()
+    video_path = "D:/1120/Git/Other/PracticalPythonAndOpenCV_CaseStudies-master/Chapter03/video/adrian_face.mov"
     cap=cv2.VideoCapture(0)
     face_flag=0
-    bbox=0
     lose_threshold=10
     target_lose_cnt=0
     while (cv2.waitKey(1)!=27):
+        start_tc=cv2.getTickCount()
         grabbed,frame=cap.read()
+        if not grabbed:
+            break
+
         if not face_flag:
-            face_bbox = d.cascade_method(frame)
+            face_bbox = d.face_detection(frame)
             #No face has been detected
             if isinstance(face_bbox,int):
                 cv2.imshow("output",frame)
@@ -153,16 +157,16 @@ if __name__ == '__main__':
                     continue
                 else:
                     (old_x,old_y,old_w,old_h)=(int(v) for v in box_predict)
-                    
-                    logging.debug("box_predict shape ({},{})".format(box_predict[2],box_predict[3]))
+
+                    # logging.debug("box_predict shape ({},{})".format(box_predict[2],box_predict[3]))
 
                     # maxY=np.min([old_y+old_h,frame.shape[0]])
                     # maxX=np.min([old_x+old_w,frame.shape[1]])
                     # bbox = d.cascade_method(frame[old_y:maxY,old_x:maxX])
 
-                    # predict rect
+                    # draw predict rect
                     cv2.rectangle(frame, (old_x, old_y), (old_x+old_w, old_y+old_h), (0,0 ,255), 2)
-                    face_bbox = d.cascade_method(frame[old_y:old_y+old_h,old_x:old_x+old_w])
+                    face_bbox = d.face_detection(frame[old_y:old_y+old_h,old_x:old_x+old_w])
                     if isinstance(face_bbox,int):
                         target_lose_cnt+=1
                         cv2.imshow("output",frame)
@@ -176,8 +180,13 @@ if __name__ == '__main__':
             # lose target
             else:
                 logging.info("losing target")
+                # reset tracker
                 t=Tracker()
                 face_flag=0
                 continue
+        end_tc=cv2.getTickCount()
+        fps=cv2.getTickFrequency()/(end_tc-start_tc)
+        logging.info(fps)
     cv2.destroyAllWindows()
     cap.release()
+

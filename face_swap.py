@@ -221,9 +221,10 @@ if __name__ == '__main__':
         mask = mask_from_points((w, h), dst_points)
     mask_src = np.mean(warped_src_img, axis=2) > 0
     mask = np.asarray(mask*mask_src, dtype=np.uint8)
-    ## Shrink the mask
-    kernel = np.ones((1, 1), np.uint8)
-    mask = cv2.erode(mask, kernel, iterations=1)
+    ## Shrink the mask 
+    ## But this steps makes no difference to mask
+    # kernel = np.ones((1, 1), np.uint8)
+    # mask = cv2.erode(mask, kernel, iterations=1)
     ## Poisson Blending
     r = cv2.boundingRect(mask)
     center = ((r[0] + int(r[2] / 2), r[1] + int(r[3] / 2)))

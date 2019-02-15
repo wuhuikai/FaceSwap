@@ -14,9 +14,9 @@ def face_points_detection(img, bbox):
 
     # loop over the 68 facial landmarks and convert them
     # to a 2-tuple of (x, y)-coordinates
-    coords = [(shape.part(i).x, shape.part(i).y) for i in range(68)]
+    coords = np.asarray(list([p.x, p.y] for p in shape.parts()), dtype=np.int)
 
-    # return the list of (x, y)-coordinates
+    # return the array of (x, y)-coordinates
     return coords
 
 if __name__ == '__main__':
