@@ -27,19 +27,26 @@ class VideoHandler(object):
         h = int(h * 1.3)
         return (x, y, w, h)
 
-    def set_src_img(self,img):
-        self.src_img=img
+    def set_src_img(self,img_path):
+        self.src_img=cv2.imread(img_path)
 
-    def process_dst_img(self):
-        src_faces = self.detector.face_detection(self.src_img)
-        self.src_points=face_points_detection(self.src_img,src_faces[0])
+    def process_src_img(self):
+        src_face = self.detector.face_detection(self.src_img)
+        if isinstance(src_face, int):
+            logging.error("No face in src img")
+            exit(0)
+        src_face_rect=self.box_to_dlib_rect(src_face)
+        self.src_points=face_points_detection(self.src_img,src_face_rect)
         src_mask = mask_from_points(self.src_img.shape[:2],self. src_points)
         self.src_only_face=apply_mask(self.src_img,src_mask)
 
-    def run_face_swap1(self,dst_img,dst_face_rect:dlib.rectangle):
-        dst_points=face_points_detection(dst_img,dst_face_rect)
+    def run_face_swap(self,dst_img,dst_face_rect:dlib.rectangle):
+        dst_points=face_points_detection(dst_img,dst_face_rect) #4ms
         w,h = dst_img.shape[:2]
-        warped_dst_img = warp_image_3d(dst_img, dst_points[:48], self.src_points[:48], self.src_only_face.shape[:2])
+        t0=time.time()
+        warped_dst_img = warp_image_3d(dst_img, dst_points[:48], self.src_points[:48], self.src_only_face.shape[:2]) #140ms
+        t1=time.time()
+        logging.info(t1-t0)
         self.src_only_face = correct_colours(warped_dst_img, self.src_only_face, self.src_points)
         warped_src_img = warp_image_3d(self.src_only_face, self.src_points[:48], dst_points[:48], (w, h))
         dst_mask = mask_from_points((w, h), dst_points)
@@ -48,15 +55,15 @@ class VideoHandler(object):
         output = cv2.seamlessClone(warped_src_img, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
         return  output
 
-    # For DEBUG
-    def run_face_swap(self,dst_img,dst_face_bbox):
-        dst_points=face_points_detection(dst_img,dst_face_bbox)
-        for (point_index,point) in enumerate(dst_points):
-            # pt_pos=(point.x,point.y)
-
-            cv2.circle(dst_img, (point[0],point[1]), 2, (0,0,255), -1)
-            cv2.putText(dst_img,str(point_index),(point[0],point[1]),cv2.FONT_HERSHEY_SIMPLEX,0.35,(0,0,255),1)
-        return dst_img
+    # For TEST
+    # def run_face_swap(self,dst_img,dst_face_bbox):
+    #     dst_points=face_points_detection(dst_img,dst_face_bbox)
+    #     for (point_index,point) in enumerate(dst_points):
+    #         # pt_pos=(point.x,point.y)
+    #
+    #         cv2.circle(dst_img, (point[0],point[1]), 2, (0,0,255), -1)
+    #         cv2.putText(dst_img,str(point_index),(point[0],point[1]),cv2.FONT_HERSHEY_SIMPLEX,0.35,(0,0,255),1)
+    #     return dst_img
 
     def box_to_dlib_rect(self,bbox):
         (x,y,w,h)=[int(v) for v in bbox]
@@ -126,9 +133,12 @@ class VideoHandler(object):
                     cv2.imshow("frame", frame)
                     continue
 
-
             face_rect = self.box_to_dlib_rect(face_bbox)
             frame = self.run_face_swap(frame, face_rect)
+            # frame_roi=frame[y:y+h,x:x+w]
+            # face_rect = self.box_to_dlib_rect(face_bbox)
+            # frame_roi = self.run_face_swap(frame_roi, face_rect)
+
             end_tc = cv2.getTickCount()
             fps = cv2.getTickFrequency() / (end_tc - start_tc)
             logging.info("fps {}".format(fps))
@@ -214,4 +224,6 @@ class VideoHandler(object):
 if __name__ == '__main__':
     video_path = "D:/1120/Git/Other/PracticalPythonAndOpenCV_CaseStudies-master/Chapter03/video/adrian_face.mov"
     test=VideoHandler()
+    test.set_src_img("D:/1120/Git/Mywork/FaceSwap/imgs/test7.jpg")
+    test.process_src_img()
     test.cascade_vh()

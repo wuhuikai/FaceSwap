@@ -8,7 +8,7 @@ import numpy as np
 PREDICTOR_PATH = 'models/shape_predictor_68_face_landmarks.dat'
 predictor = dlib.shape_predictor(PREDICTOR_PATH)
 ## Face and points detection
-def face_points_detection(img, bbox):
+def face_points_detection(img, bbox:dlib.rectangle):
     # Get the landmarks/parts for the face in box d.
     shape = predictor(img, bbox)
 

@@ -27,7 +27,8 @@ class Detector(object):
 
     def __get_face_rects(self,img):
         # 1.3 5
-        face_rects = self.detector.detectMultiScale(img, scaleFactor=1.1, minNeighbors=2,flags=cv2.CASCADE_SCALE_IMAGE,minSize=(120,120))  
+        face_rects = self.detector.detectMultiScale(img, scaleFactor=1.1, minNeighbors=2,flags=cv2.CASCADE_SCALE_IMAGE,minSize=(120,120))
+        # face_rects = self.detector.detectMultiScale(img, scaleFactor=1.3, minNeighbors=5,flags=cv2.CASCADE_SCALE_IMAGE,minSize=(120,120))
         # face_rect:ndarray
         if face_rects == ():
             return None
@@ -113,7 +114,7 @@ def expand_bbox(x,y,w,h):
     x=np.max([0,x-int(w*0.10)])
     y=np.max([0,y-int(h*0.10)])
     w=int(w*1.2)
-    h=int(h*1.2)
+    h=int(h*1.3)
     return (x,y,w,h)
 if __name__ == '__main__':
     d=Detector()
