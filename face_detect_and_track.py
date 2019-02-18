@@ -12,7 +12,7 @@ class Detector(object):
     def __init__(self):
         self.detector = cv2.CascadeClassifier(CASCADE_PATH)
 
-    def face_detection(self,frame):
+    def face_detection(self,frame)->np.ndarray:
         face_rects = self.__get_face_rects(frame)
         if not isinstance(face_rects, np.ndarray):
             logging.info("No face")
@@ -37,17 +37,17 @@ class Detector(object):
 
 
 class DlibDetector(object):
-    def __init__(self):
+    def __init__(self)->dlib.rectangle: 
         self.detector = dlib.get_frontal_face_detector()
         
     def __get_face_rects(self,img,upsample_num_times=0):
-        # To get faster speed, I recommend the param upsample_num_times == 0
+        # For faster speed, I recommend the param upsample_num_times == 0
         face_rects = self.detector(img, upsample_num_times)
         if not face_rects:
             return None  # face_rects=None
         return face_rects
     
-    def rect_to_bb(self,rect: dlib.rectangle):
+    def rect_to_bb(self,rect: dlib.rectangle)->tuple:
         x = rect.left()
         y = rect.top()
         w = rect.right() - x
@@ -95,17 +95,10 @@ class Tracker(object):
     # def start_track(self,frame,starX,startY,endX,endY):
     #     self.tracker.init(frame,(starX,startY,endX,endY))
     
-    def start_track(self,frame,bbox):
+    def start_track(self,frame,bbox:np.ndarray):
         self.tracker.init(frame,bbox)
 
     def update_track(self,frame): 
-        # success,bbox=self.tracker.update(frame)
-        # if not success:
-        #     logging.info("failed")
-        #     return False
-        # (x, y, w, h) = [int(v) for v in bbox]
-        # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        # return bbox
         return self.tracker.update(frame)
 
     def clear(self):

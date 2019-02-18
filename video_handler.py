@@ -41,6 +41,28 @@ class VideoHandler(object):
         self.src_only_face=apply_mask(self.src_img,src_mask)
 
     def run_face_swap(self,dst_img,dst_face_rect:dlib.rectangle):
+        if True:
+            return self.fast_face_swap(dst_img,dst_face_rect)
+        else:
+            return self.slow_face_swap(dst_img, dst_face_rect)
+
+
+    def fast_face_swap(self,dst_img,dst_face_rect:dlib.rectangle):
+        h,w=dst_img.shape[:2]
+        dst_points = face_points_detection(dst_img, dst_face_rect)  # 4ms
+        dst_mask = mask_from_points((h,w), dst_points)
+        dst_only_face = apply_mask(dst_img, dst_mask)
+
+        warped_src_img = warp_image_3d(self.src_img, self.src_points[:48], dst_points[:48],(h,w) )
+        src_only_face = correct_colours(dst_only_face, warped_src_img, dst_points)
+
+        r = cv2.boundingRect(dst_mask)
+        center = ((r[0] + int(r[2] / 2), r[1] + int(r[3] / 2)))
+        output = cv2.seamlessClone(warped_src_img, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
+        return output
+
+
+    def slow_face_swap(self,dst_img,dst_face_rect:dlib.rectangle):
         dst_points=face_points_detection(dst_img,dst_face_rect) #4ms
         w,h = dst_img.shape[:2]
         t0=time.time()
@@ -54,7 +76,6 @@ class VideoHandler(object):
         center = ((r[0] + int(r[2] / 2), r[1] + int(r[3] / 2)))
         output = cv2.seamlessClone(warped_src_img, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
         return  output
-
     # For TEST
     # def run_face_swap(self,dst_img,dst_face_bbox):
     #     dst_points=face_points_detection(dst_img,dst_face_bbox)
@@ -77,10 +98,10 @@ class VideoHandler(object):
             start_tc = cv2.getTickCount()
             grabbed, frame = self.cap.read()
             if not face_flag:
-                face_bbox = self.detector.face_detection(frame)
+                face_bbox:np.ndarray = self.detector.face_detection(frame)
                 # No face has been detected
                 if isinstance(face_bbox, int):
-                    cv2.imshow("frame", frame)
+                    cv2.imshow("output", frame)
                     continue
                 # detect successfully
                 else:
@@ -89,10 +110,6 @@ class VideoHandler(object):
                     face_bbox = self.expand_bbox(*face_bbox)
                     self.tracker.start_track(frame, face_bbox)
                     target_lose_cnt = 0
-                    (x, y, w, h) = face_bbox
-
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
 
 
             else:
@@ -102,38 +119,41 @@ class VideoHandler(object):
                     if not success:
                         logging.info("update failed")
                         target_lose_cnt += 1
-                        cv2.imshow("frame", frame)
+                        cv2.imshow("output", frame)
                         continue
 
                     (old_x, old_y, old_w, old_h) = (int(v) for v in box_predict)
 
                     # draw predict rect
-                    cv2.rectangle(frame, (old_x, old_y), (old_x + old_w, old_y + old_h), (0, 0, 255), 2)
+                    # cv2.rectangle(frame, (old_x, old_y), (old_x + old_w, old_y + old_h), (0, 0, 255), 2)
+
                     # face_bbox is relative coordinates!!!!
                     face_bbox = self.detector.face_detection(frame[old_y:old_y + old_h, old_x:old_x + old_w])
                     if isinstance(face_bbox, int):
                         target_lose_cnt += 1
-                        cv2.imshow("frame", frame)
+                        cv2.imshow("output", frame)
                         continue
                     target_lose_cnt = 0
                     (x, y, w, h) = self.expand_bbox(*face_bbox)
+
+                    # Convert it to absolute coordinates
                     x = int(old_x + x)
                     y = int(old_y + y)
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
                     face_bbox[0]=x
                     face_bbox[1]=y
 
                 # lose target
                 else:
-                    logging.info("losing target")
+                    logging.info("target lost")
                     # reset tracker
                     self.tracker = Tracker()
                     face_flag = 0
-                    cv2.imshow("frame", frame)
+                    cv2.imshow("output", frame)
                     continue
 
-            face_rect = self.box_to_dlib_rect(face_bbox)
+            face_rect:dlib.rectangle = self.box_to_dlib_rect(face_bbox)
             frame = self.run_face_swap(frame, face_rect)
             # frame_roi=frame[y:y+h,x:x+w]
             # face_rect = self.box_to_dlib_rect(face_bbox)
@@ -142,7 +162,6 @@ class VideoHandler(object):
             end_tc = cv2.getTickCount()
             fps = cv2.getTickFrequency() / (end_tc - start_tc)
             logging.info("fps {}".format(fps))
-
             cv2.imshow("frame", frame)
 
         cv2.destroyAllWindows()
