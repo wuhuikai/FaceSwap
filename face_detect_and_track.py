@@ -95,8 +95,8 @@ class Tracker(object):
     # def start_track(self,frame,starX,startY,endX,endY):
     #     self.tracker.init(frame,(starX,startY,endX,endY))
     
-    def start_track(self,frame,bbox:np.ndarray):
-        self.tracker.init(frame,bbox)
+    def start_track(self,frame,x,y,w,h):
+        self.tracker.init(frame,(x,y,w,h))
 
     def update_track(self,frame): 
         return self.tracker.update(frame)
