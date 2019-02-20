@@ -5,7 +5,7 @@ import json
 import argparse
 import numpy as np
 import scipy.spatial as spatial
-
+import logging
 ## 3D Transform
 def bilinear_interpolate(img, coords):
     """ Interpolates over every image channel
@@ -58,6 +58,7 @@ def process_warp(src_img, result_img, tri_affines, dst_points, delaunay):
                             np.vstack((coords.T, np.ones(num_coords))))
         x, y = coords.T
         result_img[y, x] = bilinear_interpolate(src_img, out_coords)
+
 
     return None
 

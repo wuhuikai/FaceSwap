@@ -15,11 +15,11 @@ class Detector(object):
     def face_detection(self,frame)->np.ndarray:
         face_rects = self.__get_face_rects(frame)
         if not isinstance(face_rects, np.ndarray):
-            logging.info("No face")
+            logging.debug("No face")
             return 0
 
         if not len(face_rects) == 1:
-            logging.info("Too many face")
+            logging.error("Too many face")
             return 0
 
         return face_rects[0]
