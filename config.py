@@ -1,4 +1,3 @@
-
 import cv2
 PREDICTOR_PATH = "models/shape_predictor_68_face_landmarks.dat"
 CASCADE_PATH="models/haarcascade_frontalface_default.xml"
