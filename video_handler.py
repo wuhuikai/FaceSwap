@@ -9,16 +9,6 @@ from face_detect_and_track import *
 from face_points_detection import *
 from face_swap import *
 
-# FACE_POINTS = list(range(17, 68))
-# MOUTH_POINTS = list(range(48, 61))
-# RIGHT_BROW_POINTS = list(range(17, 22))
-# LEFT_BROW_POINTS = list(range(22, 27))
-# RIGHT_EYE_POINTS = list(range(36, 42))
-# LEFT_EYE_POINTS = list(range(42, 48))
-# NOSE_POINTS = list(range(27, 35))
-# JAW_POINTS = list(range(0, 17))
-# FACE_PROFILE=(JAW_POINTS+RIGHT_BROW_POINTS+LEFT_BROW_POINTS)
-
 
 class VideoHandler(object):
     def __init__(self, video_path=0, detector_type="cascade", tracker_type="mosse", lose_threshold=10):
@@ -57,6 +47,7 @@ Cancel the selection process by pressing c button!''')
                                    fromCenter=False, showCrosshair=False)
             if initBB != (0, 0, 0, 0):
                 break
+        cv2.destroyWindow("src_roi")
         (x, y, w, h) = initBB
         self.src_points -= (x, y)
         self.src_img = self.src_img[y:y + h, x:x + w]
@@ -78,15 +69,18 @@ Cancel the selection process by pressing c button!''')
             logging.error("part of Face")
             return (failed, dst_img)
 
+        dst_mask = mask_from_points(dst_img.shape[:2], dst_points, erode_flag=1)
+
         r = cv2.boundingRect(dst_points)
         (x, y, w, h) = r
+
         if y + h > dst_img.shape[0] or x + w > dst_img.shape[1]:
             return (failed, dst_img)
+
         dst_roi = dst_img[y:y + h, x:x + w]
+        dst_mask = dst_mask[y:y + h, x:x + w]
         dst_points -= (x, y)
 
-        dst_mask = mask_from_points(
-            dst_roi.shape[:2], dst_points, erode_flag=0)
         dst_only_face = apply_mask(dst_roi, dst_mask)
 
         warped_src_img = warp_image_3d(
@@ -214,7 +208,6 @@ Cancel the selection process by pressing c button!''')
             end_tc = cv2.getTickCount()
             fps = cv2.getTickFrequency() / (end_tc - start_tc)
             logging.info("fps {}".format(fps))
-
         cv2.destroyAllWindows()
         self.cap.release()
 
@@ -248,3 +241,4 @@ if __name__ == '__main__':
     test.set_src_img(args.src_img)
     test.process_src_img()
     test.cascade_vh()
+
