@@ -3,20 +3,20 @@ import json
 import cv2
 import dlib
 import argparse
+import numpy as np
 
+PREDICTOR_PATH = 'models/shape_predictor_68_face_landmarks.dat'
+predictor = dlib.shape_predictor(PREDICTOR_PATH)
 ## Face and points detection
-def face_points_detection(img, bbox):
-    PREDICTOR_PATH = 'models/shape_predictor_68_face_landmarks.dat'
-    predictor = dlib.shape_predictor(PREDICTOR_PATH)
-
+def face_points_detection(img, bbox:dlib.rectangle):
     # Get the landmarks/parts for the face in box d.
     shape = predictor(img, bbox)
 
     # loop over the 68 facial landmarks and convert them
     # to a 2-tuple of (x, y)-coordinates
-    coords = [(shape.part(i).x, shape.part(i).y) for i in range(68)]
+    coords = np.asarray(list([p.x, p.y] for p in shape.parts()), dtype=np.int)
 
-    # return the list of (x, y)-coordinates
+    # return the array of (x, y)-coordinates
     return coords
 
 if __name__ == '__main__':

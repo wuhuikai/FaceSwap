@@ -5,7 +5,7 @@ import json
 import argparse
 import numpy as np
 import scipy.spatial as spatial
-
+import logging
 ## 3D Transform
 def bilinear_interpolate(img, coords):
     """ Interpolates over every image channel
@@ -58,6 +58,7 @@ def process_warp(src_img, result_img, tri_affines, dst_points, delaunay):
                             np.vstack((coords.T, np.ones(num_coords))))
         x, y = coords.T
         result_img[y, x] = bilinear_interpolate(src_img, out_coords)
+
 
     return None
 
@@ -122,13 +123,14 @@ def warp_image_2d(im, M, dshape):
     return output_im
 
 ## Generate Mask
-def mask_from_points(size, points):
+def mask_from_points(size, points,erode_flag=1):
     radius = 10  # kernel size
     kernel = np.ones((radius, radius), np.uint8)
 
     mask = np.zeros(size, np.uint8)
     cv2.fillConvexPoly(mask, cv2.convexHull(points), 255)
-    mask = cv2.erode(mask, kernel)
+    if erode_flag:
+        mask = cv2.erode(mask, kernel,iterations=1)
 
     return mask
 
@@ -178,6 +180,14 @@ def alpha_feathering(src_img, dest_img, img_mask, blur_radius=15):
 
     return result_img
 
+def check_points(img,points):
+    # Todo: I just consider one situation.
+    if points[8,1]>img.shape[0]:
+        logging.error("Jaw part out of image")
+    else:
+        return True
+    return False
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='FaceSwap Demo')
     parser.add_argument('--src_img', required=True, help='Path for source image')
@@ -208,6 +218,7 @@ if __name__ == '__main__':
     w, h = dst_img.shape[:2]
     ## 2d warp
     src_mask = mask_from_points(src_img.shape[:2], src_points)
+
     src_img = apply_mask(src_img, src_mask)
     # Correct Color for 2d warp
     warped_dst_img = warp_image_3d(dst_img, dst_points[:48], src_points[:48], src_img.shape[:2])
@@ -221,9 +232,10 @@ if __name__ == '__main__':
         mask = mask_from_points((w, h), dst_points)
     mask_src = np.mean(warped_src_img, axis=2) > 0
     mask = np.asarray(mask*mask_src, dtype=np.uint8)
-    ## Shrink the mask
-    kernel = np.ones((1, 1), np.uint8)
-    mask = cv2.erode(mask, kernel, iterations=1)
+    ## Shrink the mask 
+    ## But this steps makes no difference to mask
+    # kernel = np.ones((1, 1), np.uint8)
+    # mask = cv2.erode(mask, kernel, iterations=1)
     ## Poisson Blending
     r = cv2.boundingRect(mask)
     center = ((r[0] + int(r[2] / 2), r[1] + int(r[3] / 2)))
