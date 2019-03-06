@@ -84,7 +84,7 @@ Cancel the selection process by pressing c button!''')
         dst_only_face = apply_mask(dst_roi, dst_mask)
 
         warped_src_img = warp_image_3d(
-            self.src_img, self.src_points[:48], dst_points[:48], dst_roi.shape[:2])
+            self.src_only_face, self.src_points[:48], dst_points[:48], dst_roi.shape[:2])
         src_only_face = correct_colours(
             dst_only_face, warped_src_img, dst_points)
 
@@ -92,7 +92,7 @@ Cancel the selection process by pressing c button!''')
         center = (int(x + w / 2), int(y + h / 2))
 
         output = cv2.seamlessClone(
-            warped_src_img, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
+            src_only_face, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
         return (success, output)
 
     def slow_face_swap(self, dst_img, dst_face_rect: dlib.rectangle):
