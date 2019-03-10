@@ -37,9 +37,10 @@ class VideoHandler(object):
         self.src_points = face_points_detection(self.src_img, src_face_rect)
 
         # shrink the size of src image, to speed up. Although it is not obvious.
-        src_points_face=self.src_img.copy()
+        src_points_face = self.src_img.copy()
         for (point_index, point) in enumerate(self.src_points):
-            cv2.circle(src_points_face, (point[0], point[1]), 2, (0, 0, 255), -1)
+            cv2.circle(src_points_face,
+                       (point[0], point[1]), 2, (0, 0, 255), -1)
         logging.info('''Select the Face and then press SPACE or ENTER button!
 Cancel the selection process by pressing c button!''')
         while True:
@@ -69,7 +70,8 @@ Cancel the selection process by pressing c button!''')
             logging.error("part of Face")
             return (failed, dst_img)
 
-        dst_mask = mask_from_points(dst_img.shape[:2], dst_points, erode_flag=1)
+        dst_mask = mask_from_points(
+            dst_img.shape[:2], dst_points, erode_flag=1)
 
         r = cv2.boundingRect(dst_points)
         (x, y, w, h) = r
@@ -83,16 +85,16 @@ Cancel the selection process by pressing c button!''')
 
         dst_only_face = apply_mask(dst_roi, dst_mask)
 
-        warped_src_img = warp_image_3d(
+        warped_src_face = warp_image_3d(
             self.src_only_face, self.src_points[:48], dst_points[:48], dst_roi.shape[:2])
-        src_only_face = correct_colours(
-            dst_only_face, warped_src_img, dst_points)
+        new_src_face = correct_colours(
+            dst_only_face, warped_src_face, dst_points)
 
         # center=tuple(dst_points[33]+(x,y))
         center = (int(x + w / 2), int(y + h / 2))
 
         output = cv2.seamlessClone(
-            src_only_face, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
+            new_src_face, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
         return (success, output)
 
     def slow_face_swap(self, dst_img, dst_face_rect: dlib.rectangle):
@@ -110,6 +112,40 @@ Cancel the selection process by pressing c button!''')
         output = cv2.seamlessClone(
             warped_src_img, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
         return output
+
+    def face_swap_2d(self, dst_img, dst_face_rect: dlib.rectangle):
+        success = 1
+        failed = 0
+        dst_points = face_points_detection(dst_img, dst_face_rect)
+        if not check_points(dst_img, dst_points):
+            logging.error("part of Face")
+            return (failed, dst_img)
+
+        dst_mask = mask_from_points(
+            dst_img.shape[:2], dst_points, erode_flag=1)
+
+        r = cv2.boundingRect(dst_points)
+        (x, y, w, h) = r
+
+        if y + h > dst_img.shape[0] or x + w > dst_img.shape[1]:
+            logging.error("part of landmarks out of face")
+            return (failed, dst_img)
+
+        dst_roi = dst_img[y:y + h, x:x + w]
+        dst_mask = dst_mask[y:y + h, x:x + w]
+        dst_points -= (x, y)
+
+        dst_only_face = apply_mask(dst_roi, dst_mask)
+
+        warped_src_face = warp_image_2d(self.src_only_face, transformation_from_points(
+            dst_points, self.src_points), (h, w, 3))
+        new_src_face = correct_colours(
+            dst_only_face, warped_src_face, dst_points)
+        center = (int(x + w / 2), int(y + h / 2))
+
+        output = cv2.seamlessClone(
+            new_src_face, dst_img, dst_mask, center, cv2.NORMAL_CLONE)
+        return (success, output)
 
     # For DEBUG
     def draw_landmarks(self, dst_img, dst_face_bbox):
@@ -241,4 +277,3 @@ if __name__ == '__main__':
     test.set_src_img(args.src_img)
     test.process_src_img()
     test.cascade_vh()
-
