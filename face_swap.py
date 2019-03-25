@@ -215,7 +215,7 @@ if __name__ == '__main__':
     with open(args.dst_points) as f:
         dst_points = np.asarray(json.load(f))
 
-    w, h = dst_img.shape[:2]
+    h, w = dst_img.shape[:2]
     ## 2d warp
     src_mask = mask_from_points(src_img.shape[:2], src_points)
 
@@ -224,12 +224,12 @@ if __name__ == '__main__':
     warped_dst_img = warp_image_3d(dst_img, dst_points[:48], src_points[:48], src_img.shape[:2])
     src_img = correct_colours(warped_dst_img, src_img, src_points)
     # Warp
-    warped_src_img = warp_image_2d(src_img, transformation_from_points(dst_points, src_points), (w, h, 3))
+    warped_src_img = warp_image_2d(src_img, transformation_from_points(dst_points, src_points), (h, w, 3))
     ## Mask for blending
     if args.mask_img:
         mask = cv2.cvtColor(cv2.imread(args.mask_img), cv2.COLOR_BGR2GRAY)
     else:
-        mask = mask_from_points((w, h), dst_points)
+        mask = mask_from_points((h, w), dst_points)
     mask_src = np.mean(warped_src_img, axis=2) > 0
     mask = np.asarray(mask*mask_src, dtype=np.uint8)
     ## Shrink the mask 

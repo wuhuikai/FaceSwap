@@ -73,12 +73,12 @@ if __name__ == '__main__':
     # Select dst face
     dst_points, dst_shape, dst_face = select_face(dst_img)
 
-    w, h = dst_face.shape[:2]
+    h, w = dst_face.shape[:2]
     
     ### Warp Image
     if not args.warp_2d:
         ## 3d warp
-        warped_src_face = warp_image_3d(src_face, src_points[:48], dst_points[:48], (w, h))
+        warped_src_face = warp_image_3d(src_face, src_points[:48], dst_points[:48], (h, w))
     else:
         ## 2d warp
         src_mask = mask_from_points(src_face.shape[:2], src_points)
@@ -88,10 +88,10 @@ if __name__ == '__main__':
             warped_dst_img = warp_image_3d(dst_face, dst_points[:48], src_points[:48], src_face.shape[:2])
             src_face = correct_colours(warped_dst_img, src_face, src_points)
         # Warp
-        warped_src_face = warp_image_2d(src_face, transformation_from_points(dst_points, src_points), (w, h, 3))
+        warped_src_face = warp_image_2d(src_face, transformation_from_points(dst_points, src_points), (h, w, 3))
 
     ## Mask for blending
-    mask = mask_from_points((w, h), dst_points)
+    mask = mask_from_points((h, w), dst_points)
     mask_src = np.mean(warped_src_face, axis=2) > 0
     mask = np.asarray(mask*mask_src, dtype=np.uint8)
 
