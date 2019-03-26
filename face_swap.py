@@ -1,11 +1,10 @@
 #! /usr/bin/env python
-import os
 import cv2
-import json
-import argparse
 import numpy as np
 import scipy.spatial as spatial
 import logging
+
+
 ## 3D Transform
 def bilinear_interpolate(img, coords):
     """ Interpolates over every image channel
@@ -39,8 +38,10 @@ def grid_coordinates(points):
     xmax = np.max(points[:, 0]) + 1
     ymin = np.min(points[:, 1])
     ymax = np.max(points[:, 1]) + 1
+
     return np.asarray([(x, y) for y in range(ymin, ymax)
                        for x in range(xmin, xmax)], np.uint32)
+
 
 def process_warp(src_img, result_img, tri_affines, dst_points, delaunay):
     """
@@ -59,8 +60,8 @@ def process_warp(src_img, result_img, tri_affines, dst_points, delaunay):
         x, y = coords.T
         result_img[y, x] = bilinear_interpolate(src_img, out_coords)
 
-
     return None
+
 
 def triangular_affine_matrices(vertices, src_points, dst_points):
     """
@@ -78,6 +79,7 @@ def triangular_affine_matrices(vertices, src_points, dst_points):
         mat = np.dot(src_tri, np.linalg.inv(dst_tri))[:2, :]
         yield mat
 
+
 def warp_image_3d(src_img, src_points, dst_points, dst_shape, dtype=np.uint8):
     rows, cols = dst_shape[:2]
     result_img = np.zeros((rows, cols, 3), dtype=dtype)
@@ -89,6 +91,7 @@ def warp_image_3d(src_img, src_points, dst_points, dst_shape, dtype=np.uint8):
     process_warp(src_img, result_img, tri_affines, dst_points, delaunay)
 
     return result_img
+
 
 ## 2D Transform
 def transformation_from_points(points1, points2):
@@ -112,6 +115,7 @@ def transformation_from_points(points1, points2):
                                 (c2.T - np.dot(s2 / s1 * R, c1.T))[:, np.newaxis]]),
                       np.array([[0., 0., 1.]])])
 
+
 def warp_image_2d(im, M, dshape):
     output_im = np.zeros(dshape, dtype=im.dtype)
     cv2.warpAffine(im,
@@ -120,7 +124,9 @@ def warp_image_2d(im, M, dshape):
                    dst=output_im,
                    borderMode=cv2.BORDER_TRANSPARENT,
                    flags=cv2.WARP_INVERSE_MAP)
+
     return output_im
+
 
 ## Generate Mask
 def mask_from_points(size, points,erode_flag=1):
@@ -133,6 +139,7 @@ def mask_from_points(size, points,erode_flag=1):
         mask = cv2.erode(mask, kernel,iterations=1)
 
     return mask
+
 
 ## Color Correction
 def correct_colours(im1, im2, landmarks1):
@@ -158,6 +165,7 @@ def correct_colours(im1, im2, landmarks1):
 
     return result
 
+
 ## Copy-and-paste
 def apply_mask(img, mask):
     """ Apply mask to supplied image
@@ -168,6 +176,7 @@ def apply_mask(img, mask):
     masked_img=cv2.bitwise_and(img,img,mask=mask)
 
     return masked_img
+
 
 ## Alpha blending
 def alpha_feathering(src_img, dest_img, img_mask, blur_radius=15):
@@ -180,6 +189,7 @@ def alpha_feathering(src_img, dest_img, img_mask, blur_radius=15):
 
     return result_img
 
+
 def check_points(img,points):
     # Todo: I just consider one situation.
     if points[8,1]>img.shape[0]:
@@ -187,71 +197,3 @@ def check_points(img,points):
     else:
         return True
     return False
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='FaceSwap Demo')
-    parser.add_argument('--src_img', required=True, help='Path for source image')
-    parser.add_argument('--dst_img', required=True, help='Path for target image')
-    parser.add_argument('--mask_img', default=None, help='Path for mask image')
-    parser.add_argument('--src_points', required=True, help='Path for source face points')
-    parser.add_argument('--dst_points', required=True, help='Path for target face points')
-    parser.add_argument('--out', required=True, help='Path for storing output image')
-    args = parser.parse_args()
-
-    # ## Debug
-    # args.src_img = 'imgs/I.jpg'
-    # args.src_points = 'results/I.points.json'
-    # args.dst_img = 'imgs/multi_faces.jpg'
-    # args.dst_points = 'results/multi_faces.points.json'
-    # args.mask_img = None
-    # args.out = 'results/output.jpg'
-
-    # Read images
-    src_img = cv2.imread(args.src_img)
-    dst_img = cv2.imread(args.dst_img)
-    # Array of corresponding points
-    with open(args.src_points) as f:
-        src_points = np.asarray(json.load(f))
-    with open(args.dst_points) as f:
-        dst_points = np.asarray(json.load(f))
-
-    h, w = dst_img.shape[:2]
-    ## 2d warp
-    src_mask = mask_from_points(src_img.shape[:2], src_points)
-
-    src_img = apply_mask(src_img, src_mask)
-    # Correct Color for 2d warp
-    warped_dst_img = warp_image_3d(dst_img, dst_points[:48], src_points[:48], src_img.shape[:2])
-    src_img = correct_colours(warped_dst_img, src_img, src_points)
-    # Warp
-    warped_src_img = warp_image_2d(src_img, transformation_from_points(dst_points, src_points), (h, w, 3))
-    ## Mask for blending
-    if args.mask_img:
-        mask = cv2.cvtColor(cv2.imread(args.mask_img), cv2.COLOR_BGR2GRAY)
-    else:
-        mask = mask_from_points((h, w), dst_points)
-    mask_src = np.mean(warped_src_img, axis=2) > 0
-    mask = np.asarray(mask*mask_src, dtype=np.uint8)
-    ## Shrink the mask 
-    ## But this steps makes no difference to mask
-    # kernel = np.ones((1, 1), np.uint8)
-    # mask = cv2.erode(mask, kernel, iterations=1)
-    ## Poisson Blending
-    r = cv2.boundingRect(mask)
-    center = ((r[0] + int(r[2] / 2), r[1] + int(r[3] / 2)))
-    output = cv2.seamlessClone(warped_src_img, dst_img, mask, center, cv2.NORMAL_CLONE)
-
-    dir_path = os.path.dirname(args.out)
-    if not os.path.isdir(dir_path):
-        os.makedirs(dir_path)
-
-    cv2.imwrite(args.out, output)
-
-    # ##For debug
-    # cv2.imshow("Face Warped", warped_src_img)
-    # cv2.imshow("Face Swapped(A)", src_img)
-    # cv2.imshow("Face Swapped(B)", dst_img)
-    # cv2.imshow("Face Swapped(A->B)", output)
-    # cv2.waitKey(0)
-    #
-    # cv2.destroyAllWindows()

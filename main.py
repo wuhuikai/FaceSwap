@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import os
 import cv2
-import dlib
 import argparse
 
 import numpy as np
@@ -9,6 +8,7 @@ import numpy as np
 from face_detection import face_detection
 from face_points_detection import face_points_detection
 from face_swap import warp_image_2d, warp_image_3d, mask_from_points, apply_mask, correct_colours, transformation_from_points
+
 
 def select_face(im, r=10):
     faces = face_detection(im)
