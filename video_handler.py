@@ -1,6 +1,6 @@
 import numpy as np
-import dlib
 import cv2
+import dlib
 import logging
 import time
 import argparse
