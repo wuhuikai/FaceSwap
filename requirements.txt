@@ -1,12 +1,3 @@
-# face_detection.py: 2
-# face_points_detection.py: 4
-# main.py: 4
 dlib >= 19.9.0
-
-# face_swap.py: 6
-# main.py: 7
 numpy >= 1.13.1
-
-# face_swap.py: 7
 scipy >= 0.18.0
-
