@@ -38,14 +38,12 @@ Note: Run **python main.py -h** for more details.
 
 ### Real-time camera
 ```sh
-python video_handler.py --src_img imgs/test7.jpg
+python main_video.py --src_img imgs/test7.jpg --show --correct_color --save_path {*.avi}
 ```
 ### Video
 ```sh
-python video_handler.py --src_img imgs/test7.jpg --video_path video/test.mov
+python main_video.py --src_img imgs/test7.jpg --video_path {video_path} --show --correct_color --save_path {*.avi}
 ```
-Make sure the landmarks actually locate in the face. Then drag the left mouse to make a rectangle, it should surround the face. Finally, we handle our video. Note that the demo works best with good, even lighting. The demo also needs support for opencv TRACKER(see config).
-![image](imgs/realtime0.gif)
 
 ## More Results
 | From | To |
