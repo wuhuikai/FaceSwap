@@ -73,8 +73,8 @@ def swap():
     logging.info(request.form)
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ")
-    src_url = request_text.split(" ")[0]
-    src_user = request_text.split(" ")[1]
+    dst_name_or_url = request_text.split(" ")[0]
+    src_name_or_url = request_text.split(" ")[1]
 
     warp_2d = False
     correct_color = False
@@ -85,56 +85,63 @@ def swap():
     if correct_color in request_text.split(" "):
         correct_color = True
 
-    logging.info(src_user)
+    logging.info(src_name_or_url)
 
-    file_name = src_user.split("|")[1].replace(">", "").replace(".", " ").title() + ".jpg"
+
+    # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
+    with tempfile.NamedTemporaryFile(suffix=".jpg") as dst_img_file:
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
+            if dst_name_or_url.lower().startswith("http"):
+                download_with_user_agent(dst_name_or_url, dest_img_file)
+                dst_img = cv2.imread(dst_img_file.name)
+            else:
+                dst_img = cv2.imread("../people/" + _find_appfolian(dst_name_or_url))
+
+            if dst_name_or_url.lower().startswith("http"):
+                download_with_user_agent(dst_name_or_url, dest_img_file)
+                dst_img = cv2.imread(dst_img_file.name)
+            else:
+                dst_img = cv2.imread("../people/" + _find_appfolian(dst_name_or_url))
+
+            src_points, src_shape, src_face = select_face(src_img)  # Select src face
+            dest_faces = select_face_update(dst_img)  # Select dst face
+
+            if src_points is None:
+                logging.info("Detect 0 Face !!!")
+                abort(400)
+
+            for face in dest_faces:
+                dst_points, dst_shape, dst_face = face
+                dst_img = face_swap(src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color)
+
+            tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
+            cv2.imwrite(tmp_file.name, dst_img)
+
+            tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
+
+            json_return = jsonify(
+                {
+                    "response_type": "in_channel",
+                    "attachments": [{"image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}"}],
+                }
+            )
+            logging.info(tmp_file_encoded)
+
+            return (
+                json_return,
+                200,
+            )
+    return make_response(jsonify({"error": BAD_REQUEST}), 400)
+
+
+def _find_appfolian(name):
+    file_name = name.split("|")[1].replace(">", "").replace(".", " ").title() + ".jpg"
 
     logging.info(file_name)
     if os.path.isfile("../people/" + file_name):
         best_match = file_name
     else:  # Fuzzy match names
-        best_match, _ = process.extractOne(src_user, PEOPLE)
-
-    # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
-    with tempfile.NamedTemporaryFile(suffix=".jpg") as temp_url_source:
-        download_with_user_agent(src_url, temp_url_source)
-        url_image = cv2.imread(temp_url_source.name)
-
-        person_image = cv2.imread("../people/" + best_match)
-
-        src_img = person_image
-        dst_img = url_image
-
-        src_points, src_shape, src_face = select_face(src_img)  # Select src face
-        dest_faces = select_face_update(dst_img)  # Select dst face
-
-        if src_points is None:
-            logging.info("Detect 0 Face !!!")
-            abort(400)
-
-        for face in dest_faces:
-            dst_points, dst_shape, dst_face = face
-            dst_img = face_swap(src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color)
-
-        tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
-        cv2.imwrite(tmp_file.name, dst_img)
-
-        tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
-
-        json_return = jsonify(
-            {
-                "response_type": "in_channel",
-                "attachments": [{"image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}"}],
-            }
-        )
-        logging.info(tmp_file_encoded)
-
-        return (
-            json_return,
-            200,
-        )
-    return make_response(jsonify({"error": BAD_REQUEST}), 400)
-
+        best_match, _ = process.extractOne(name, PEOPLE)
 
 if __name__ == "__main__":
     app.run(debug=True)
