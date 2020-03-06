@@ -29,7 +29,9 @@ COPY app app
 COPY face face
 COPY utils utils
 COPY models models
-COPY models/shape_predictor_68_face_landmarks.dat /models/shape_predictor_68_face_landmarks.dat
+COPY models /models
+
+ENV ENVIRONMENT=container
 
 # Run app
 CMD exec gunicorn --bind :$PORT --timeout 500 --workers 1 --threads 2 app.app:app

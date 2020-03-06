@@ -42,3 +42,4 @@ nosetests.xml
 .venv
 
 /people/*.jpg
+/models/lookup.json
