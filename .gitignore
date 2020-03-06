@@ -37,3 +37,8 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Virtual environments
+.venv
+
+/people/*.jpg

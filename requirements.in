@@ -1,0 +1,12 @@
+black
+dlib
+flask
+flake8
+fuzzywuzzy
+gunicorn
+numpy
+opencv-contrib-python-headless
+opencv-python-headless
+pre-commit
+python-Levenshtein
+scipy

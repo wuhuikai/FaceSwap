@@ -1,9 +1,12 @@
+import os
+
 import cv2
 import dlib
 import numpy as np
 
-## Face detection
-def face_detection(img,upsample_times=1):
+
+# Face detection
+def face_detection(img, upsample_times=0):
     # Ask the detector to find the bounding boxes of each face. The 1 in the
     # second argument indicates that we should upsample the image 1 time. This
     # will make everything bigger and allow us to detect more faces.
@@ -12,10 +15,15 @@ def face_detection(img,upsample_times=1):
 
     return faces
 
-PREDICTOR_PATH = 'models/shape_predictor_68_face_landmarks.dat'
-predictor = dlib.shape_predictor(PREDICTOR_PATH)
-## Face and points detection
-def face_points_detection(img, bbox:dlib.rectangle):
+
+if os.getenv("ENVIRONMENT", "") == "container":
+    predictor = dlib.shape_predictor("/models/shape_predictor_68_face_landmarks.dat")
+else:
+    predictor = dlib.shape_predictor("../models/shape_predictor_68_face_landmarks.dat")
+
+
+# Face and points detection
+def face_points_detection(img, bbox: dlib.rectangle):
     # Get the landmarks/parts for the face in box d.
     shape = predictor(img, bbox)
 
@@ -26,7 +34,28 @@ def face_points_detection(img, bbox:dlib.rectangle):
     # return the array of (x, y)-coordinates
     return coords
 
-def select_face(im, r=10, choose=True):
+
+def select_face_update(im, r=10):
+
+    final_faces = []
+    faces = face_detection(im)
+    for idx, face in enumerate(faces):
+        bbox = faces[idx]
+
+        points = np.asarray(face_points_detection(im, bbox))
+
+        im_w, im_h = im.shape[:2]
+        left, top = np.min(points, 0)
+        right, bottom = np.max(points, 0)
+
+        x, y = max(0, left - r), max(0, top - r)
+        w, h = min(right + r, im_h) - x, min(bottom + r, im_w) - y
+
+        final_faces.append((points - np.asarray([[x, y]]), (x, y, w, h), im[y : y + h, x : x + w],))  # noqa: E203
+    return final_faces
+
+
+def select_face(im, r=10, choose=False):
     faces = face_detection(im)
 
     if len(faces) == 0:
@@ -50,9 +79,11 @@ def select_face(im, r=10, choose=True):
         im_copy = im.copy()
         for face in faces:
             # draw the face bounding box
-            cv2.rectangle(im_copy, (face.left(), face.top()), (face.right(), face.bottom()), (0, 0, 255), 1)
-        cv2.imshow('Click the Face:', im_copy)
-        cv2.setMouseCallback('Click the Face:', click_on_face)
+            cv2.rectangle(
+                im_copy, (face.left(), face.top()), (face.right(), face.bottom()), (0, 0, 255), 1,
+            )
+        cv2.imshow("Click the Face:", im_copy)
+        cv2.setMouseCallback("Click the Face:", click_on_face)
         while len(bbox) == 0:
             cv2.waitKey(1)
         cv2.destroyAllWindows()
@@ -67,4 +98,8 @@ def select_face(im, r=10, choose=True):
     x, y = max(0, left - r), max(0, top - r)
     w, h = min(right + r, im_h) - x, min(bottom + r, im_w) - y
 
-    return points - np.asarray([[x, y]]), (x, y, w, h), im[y:y + h, x:x + w]
+    return (
+        points - np.asarray([[x, y]]),
+        (x, y, w, h),
+        im[y : y + h, x : x + w],  # noqa: E203
+    )
