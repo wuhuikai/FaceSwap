@@ -81,7 +81,7 @@ def snowball():
     if hit_chance < .5:
         message = f"You tripped and failed to hit your target, {name} is laughing at you from afar."
     else:
-        message = f"You hit {name} square in the back of his head. {name} is secretly crying right now."
+        message = f"You hit {name} square in the back of the head. {name} is secretly crying right now."
     json_return = jsonify(
                 {
                     "response_type": "in_channel",
