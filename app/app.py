@@ -71,17 +71,24 @@ def snowball():
     logging.info(request.form)
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
-    if hit_chance < .5:
-        message = f"You tripped and failed to hit your target, {request_text} is laughing at you from afar."
+    request_text = " ".join(request_text.split())
+    if "|" in request_text:
+        name = request_text.split("|")[1].replace(">", "").replace(".", " ").title()
     else:
-        message = f"You hit {request_text} square in the back of his head. {request_text} is secretly crying right now."
+        name = request_text.replace(">", "").replace(".", " ").title()
+
+
+    if hit_chance < .5:
+        message = f"You tripped and failed to hit your target, {name} is laughing at you from afar."
+    else:
+        message = f"You hit {name} square in the back of his head. {name} is secretly crying right now."
     json_return = jsonify(
                 {
                     "response_type": "in_channel",
                     "text": f"{message}",
                 }
             )
-    return 
+    return json_return
     
 
 @app.route("/swap", methods=["POST"])
