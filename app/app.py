@@ -67,18 +67,21 @@ def image(id):
 
 @app.route("/snowball", methods=["POST"])
 def snowball():
-    hit_chance = random()
+    probabiliy = random()
     logging.info(request.form)
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
+
+    hit_probability = .5
+
     if "|" in request_text:
         name = request_text.split("|")[1].replace(">", "").replace(".", " ").title()
     else:
         name = request_text.replace(">", "").replace(".", " ").title()
 
 
-    if hit_chance < .5:
+    if probabiliy > hit_probability:
         message = f"You tripped and failed to hit your target, {name} is laughing at you from afar."
     else:
         message = f"You hit {name} square in the back of the head. {name} is secretly crying right now."
