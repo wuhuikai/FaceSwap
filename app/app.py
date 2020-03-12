@@ -20,6 +20,7 @@ from fuzzywuzzy import process
 from face.face_detection import select_face, select_face_update
 from face.face_swap import face_swap
 from utils.helpers import download_with_user_agent
+from random import random
 
 
 NOT_FOUND = "Not found"
@@ -64,6 +65,24 @@ def image(id):
     else:
         return not_found()
 
+@app.route("/snowball", methods=["POST"])
+def snowball():
+    hit_chance = random()
+    logging.info(request.form)
+    request_text = request.form["text"]
+    request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
+    if hit_chance < .5:
+        message = f"You tripped and failed to hit your target, {request_text} is laughing at you from afar."
+    else:
+        message = f"You hit {request_text} square in the back of his head. {request_text} is secretly crying right now."
+    json_return = jsonify(
+                {
+                    "response_type": "in_channel",
+                    "text": f"{message}",
+                }
+            )
+    return 
+    
 
 @app.route("/swap", methods=["POST"])
 def swap():
