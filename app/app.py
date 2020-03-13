@@ -75,13 +75,16 @@ def snowball():
 
     hit_probability = .5
 
+    current_user = request.form['user_name']
+
     if "|" in request_text:
         name = request_text.split("|")[1].replace(">", "").replace(".", " ").title()
     else:
         name = request_text.replace(">", "").replace(".", " ").title()
 
-
-    if probabiliy > hit_probability:
+    if name == current_user.replace(".", " ").title():
+        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
+    elif probabiliy > hit_probability:
         message = f"You tripped and failed to hit your target, {name} is laughing at you from afar."
     else:
         message = f"You hit {name} square in the back of the head. {name} is secretly crying right now."
