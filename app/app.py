@@ -67,13 +67,13 @@ def image(id):
 
 @app.route("/snowball", methods=["POST"])
 def snowball():
-    probabiliy = random()
+    probability = random()
     logging.info(request.form)
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
 
-    hit_probability = .5
+    hit_probability = .4
 
     current_user = request.form['user_name']
 
@@ -84,10 +84,21 @@ def snowball():
 
     if name == current_user.replace(".", " ").title():
         message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
-    elif probabiliy > hit_probability:
+    elif probability < hit_probability:
         message = f"You tripped and failed to hit your target, {name} is laughing at you from afar."
-    else:
+    elif probability < .6:
         message = f"You hit {name} square in the back of the head. {name} is secretly crying right now."
+    elif probability < .8:
+        if name != "Stanley Phu" and current_user.replace(".", " ").title():
+            person_hit = "Stanley Phu"
+        else:
+            person_hit = "Yen-Ting Chen"
+        message = f"You hit the ceiling, it bounces, and hits {person_hit} on the face instead. Try again maybe?"
+    elif probability < .9:
+        message = f"You tried to hit {name} but hit the monitor instead. You may or may not have left a dent on that monitor."
+    else:
+        message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
+
     json_return = jsonify(
                 {
                     "response_type": "in_channel",
