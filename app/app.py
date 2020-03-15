@@ -5,7 +5,7 @@ import logging
 import os
 import tempfile
 
-import cv2
+import cv3
 
 from flask import (
     Flask,
@@ -25,6 +25,7 @@ from random import random
 
 NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
+FORBIDDEN = "Forbidden"
 HIT_PROBABILITY = .4
 
 STATISTICS_TABLE= {}
@@ -74,6 +75,10 @@ def snowball():
     probability = random()
     logging.info(request.form)
     request_text = request.form["text"]
+    
+    if not request.form['token'] == '40gIKRHZUlj1e5r9Ya4m5X9Z':
+        return make_response(jsonify({"error": FORBIDDEN}), 403)
+
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
     
@@ -108,9 +113,10 @@ def render_rankings():
     message = "You must throw at least once to be ranked.\n"
     filtered_STATISTICS_TABLE = {k:v for k,v in STATISTICS_TABLE.items() if v['Attempt']!=0}
     rankings_table_by_hit_success = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'], reverse=True)][:10])
-    rankings_table_by_hit_accuracy = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'])][:10], reverse=True)
 
-    return render_message(message + rankings_table)
+    rankings_table_by_hit_accuracy = ''.join([ f"{key} Accuracy: {value['Hit']/value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'], reverse=True)][:10])
+
+    return render_message(message + rankings_table_by_hit_success + '\n\n' + rankings_table_by_hit_accuracy)
 
 def render_stats(current_user):
     if STATISTICS_TABLE[current_user]['Attempt'] == 0:
