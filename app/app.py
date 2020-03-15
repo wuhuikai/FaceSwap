@@ -25,6 +25,7 @@ from random import random
 
 NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
+HIT_PROBABILITY = .4
 
 app = Flask(__name__)
 
@@ -73,40 +74,47 @@ def snowball():
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
 
-    hit_probability = .4
+    current_user = clean_name(request.form['user_name'])
 
-    current_user = request.form['user_name']
+    target_name = clean_name(request_text)
 
-    if "|" in request_text:
-        name = request_text.split("|")[1].replace(">", "").replace(".", " ").title()
+    message = outcomes(probability, current_user, target_name)
+
+    json_return = jsonify(
+                             {
+                                 "response_type": "in_channel",
+                                 "text": f"{message}",
+                             }
+                         )
+    return json_return
+
+def clean_name(potential_name):
+    if "|" in potential_name:
+        name = potential_name.split("|")[1].replace(">", "").replace(".", " ").title()
     else:
-        name = request_text.replace(">", "").replace(".", " ").title()
+        name = potential_name.replace(">", "").replace(".", " ").title()
+    return name
 
-    if name == current_user.replace(".", " ").title():
+    
+def outcomes(probability, current_user, target):
+    if target == current_user:
         message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
-    elif probability < hit_probability:
-        message = f"You tripped and failed to hit your target, {name} is laughing at you from afar."
+    elif probability < HIT_PROBABILITY:
+        message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
     elif probability < .6:
-        message = f"You hit {name} square in the back of the head. {name} is secretly crying right now."
+        message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
     elif probability < .8:
-        if name != "Stanley Phu" and current_user.replace(".", " ").title():
+        if target != "Stanley Phu" and current_user:
             person_hit = "Stanley Phu"
         else:
             person_hit = "Yen-Ting Chen"
         message = f"You hit the ceiling, it bounces, and hits {person_hit} on the face instead. Try again maybe?"
     elif probability < .9:
-        message = f"You tried to hit {name} but hit the monitor instead. You may or may not have left a dent on that monitor."
+        message = f"You tried to hit {target} but hit the monitor instead. You may or may not have left a dent on that monitor."
     else:
         message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
+    return message
 
-    json_return = jsonify(
-                {
-                    "response_type": "in_channel",
-                    "text": f"{message}",
-                }
-            )
-    return json_return
-    
 
 @app.route("/swap", methods=["POST"])
 def swap():
