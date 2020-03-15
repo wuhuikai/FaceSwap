@@ -107,7 +107,8 @@ def clean_name(potential_name):
 def render_rankings():
     message = "You must throw at least once to be ranked.\n"
     filtered_STATISTICS_TABLE = {k:v for k,v in STATISTICS_TABLE.items() if v['Attempt']!=0}
-    rankings_table = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'])][:10])
+    rankings_table_by_hit_success = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'], reverse=True)][:10])
+    rankings_table_by_hit_accuracy = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'])][:10], reverse=True)
 
     return render_message(message + rankings_table)
 
