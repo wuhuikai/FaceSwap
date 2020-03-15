@@ -46,7 +46,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found():
     return make_response(jsonify({"error": NOT_FOUND}), 404)
 
 
