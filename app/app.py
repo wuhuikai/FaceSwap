@@ -27,6 +27,8 @@ NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
 HIT_PROBABILITY = .4
 
+STATISTICS_TABLE= {}
+
 app = Flask(__name__)
 
 ####################################################
@@ -66,6 +68,7 @@ def image(id):
     else:
         return not_found()
 
+
 @app.route("/snowball", methods=["POST"])
 def snowball():
     probability = random()
@@ -73,20 +76,26 @@ def snowball():
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
-
+    
     current_user = clean_name(request.form['user_name'])
 
+    if not STATISTICS_TABLE.get(current_user):
+        STATISTICS_TABLE[current_user] = {'Hit': 0, 'Attempt': 0}
+ 
+    if 'stats' == request_text:
+        return render_stats(current_user)
+
+    if 'rankings' == request_text:
+        return render_rankings()
+
     target_name = clean_name(request_text)
+    if target_name == current_user:
+        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
+        return render_message(message)
 
     message = outcomes(probability, current_user, target_name)
+    return render_message(message)
 
-    json_return = jsonify(
-                             {
-                                 "response_type": "in_channel",
-                                 "text": f"{message}",
-                             }
-                         )
-    return json_return
 
 def clean_name(potential_name):
     if "|" in potential_name:
@@ -95,24 +104,64 @@ def clean_name(potential_name):
         name = potential_name.replace(">", "").replace(".", " ").title()
     return name
 
+def render_rankings():
+    message = "You must throw at least once to be ranked.\n"
+    filtered_STATISTICS_TABLE = {k:v for k,v in STATISTICS_TABLE.items() if v['Attempt']!=0}
+    rankings_table = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'])][:10])
+
+    return render_message(message + rankings_table)
+
+def render_stats(current_user):
+    if STATISTICS_TABLE[current_user]['Attempt'] == 0:
+        return render_message("ERROR, DATA NOT FOUND \nAre we human? Or are we dancer?")
+
+    accuracy = STATISTICS_TABLE[current_user]['Hit']/ STATISTICS_TABLE[current_user]['Attempt']
+
+    if accuracy > .9:
+        message = f'Turn off your hacks or you will get nerfed!'
+    elif accuracy > .5:
+        message = f'You have a great throw! Keep it up!'
+    elif accuracy > .3:
+        message = f'You are alright. Statistically speaking you are very much just only alright.'
+    elif accuracy > .1:
+        message = f'Probably work on your aim during your freetime.'
+    else:
+        if STATISTICS_TABLE[current_user]['Attempt'] > 10:
+            message = f'Hey buddy, everything alright? Consider bribing someone... You probably need help.'
+        else: 
+            message = f'Keep trying! May the odds always be in your favor!'
+
+    stat_table = '\n'+ ''.join([ f'{key}: {value}    '  for key, value in STATISTICS_TABLE[current_user].items()]) + f'\n {current_user} has an accuracy of {accuracy:.2f}'
+    return render_message(message + stat_table)
+
+
+def render_message(message):
+    return jsonify(
+                      {
+                          "response_type": "in_channel",
+                          "text": f"{message}",
+                      }
+                  )
+
     
 def outcomes(probability, current_user, target):
-    if target == current_user:
-        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
-    elif probability < HIT_PROBABILITY:
-        message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
-    elif probability < .6:
+    STATISTICS_TABLE[current_user]['Attempt'] += 1
+    if probability < HIT_PROBABILITY:
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
-    elif probability < .8:
-        if target != "Stanley Phu" and current_user:
-            person_hit = "Stanley Phu"
-        else:
-            person_hit = "Yen-Ting Chen"
-        message = f"You hit the ceiling, it bounces, and hits {person_hit} on the face instead. Try again maybe?"
-    elif probability < .9:
-        message = f"You tried to hit {target} but hit the monitor instead. You may or may not have left a dent on that monitor."
+        STATISTICS_TABLE[current_user]['Hit'] += 1
     else:
-        message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
+        if probability < .6:
+            message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
+        elif probability < .8:
+            if target != "Stanley Phu" and current_user:
+                person_hit = "Stanley Phu"
+            else:
+                person_hit = "Yen-Ting Chen"
+            message = f"You hit the ceiling, it bounces, and hits {person_hit} on the face instead. Try again maybe?"
+        elif probability < .9:
+            message = f"You tried to hit {target} but hit the monitor instead. You may or may not have left a dent on that monitor."
+        else:
+            message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
     return message
 
 
