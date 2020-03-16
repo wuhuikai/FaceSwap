@@ -114,7 +114,7 @@ def render_rankings():
     filtered_STATISTICS_TABLE = {k:v for k,v in STATISTICS_TABLE.items() if v['Attempt']!=0}
     rankings_table_by_hit_success = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'], reverse=True)][:10])
 
-    rankings_table_by_hit_accuracy = ''.join([ f"{key} Accuracy: {value['Hit']/value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'], reverse=True)][:10])
+    rankings_table_by_hit_accuracy = ''.join([ f"{key} Accuracy: {value['Hit']/value['Attempt']:.2f}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit']/item[1]['Attempt'], reverse=True)][:10])
 
     return render_message(message + rankings_table_by_hit_success + '\n\n' + rankings_table_by_hit_accuracy)
 
