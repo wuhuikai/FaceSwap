@@ -5,7 +5,7 @@ import logging
 import os
 import tempfile
 
-import cv3
+import cv2
 
 from flask import (
     Flask,
