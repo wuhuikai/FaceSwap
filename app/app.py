@@ -5,7 +5,7 @@ import logging
 import os
 import tempfile
 
-import cv3
+import cv2
 
 from flask import (
     Flask,
@@ -46,7 +46,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found():
     return make_response(jsonify({"error": NOT_FOUND}), 404)
 
 
