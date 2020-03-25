@@ -65,7 +65,11 @@ def image(id):
 def throw():
     logging.info(request.form)
     request_text = request.form["text"]
-    
+ 
+    if not request.form['token'] == 'hv1Ga1tpwrqIK7np4LxiLu45':
+        return make_response(jsonify({"error": FORBIDDEN}), 403)
+
+   
     probability = random()
 
     current_channel_id = request.form['channel_id']
