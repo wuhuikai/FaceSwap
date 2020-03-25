@@ -17,6 +17,8 @@ NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
 FORBIDDEN = "Forbidden"
 HIT_PROBABILITY = 0.6
+FRISBEE_HOLDER = {}
+TOSS_PROBABILITY = .8
 
 STATISTICS_TABLE = {}
 
@@ -58,6 +60,47 @@ def image(id):
         return send_file(id_decoded, mimetype="image/jpeg", attachment_filename="test.jpg")
     else:
         return not_found()
+
+@app.route("/frisbee", methods=["POST"])
+def throw():
+    logging.info(request.form)
+    request_text = request.form["text"]
+    
+    probability = random()
+
+    current_channel_id = request.form['channel_id']
+
+    current_user = clean_name(request.form['user_name'])
+    target_name = clean_name(request_text)
+
+    if request_text == "reset" and (current_user == "Stanley Phu" or current_user == "Kevin Hsieh"):
+        FRISBEE_HOLDER[current_channel_id] = {'frisbee_holder': None, 'chain': 0}
+        message = "The game has been reset."
+        return render_message(message)
+
+    if len(request_text.split('|')) < 2:
+        return render_message("You have to toss this to someone with the @ handle!")
+
+    if current_user == target_name:
+        return render_message("Quit hogging the disc asshole!")
+
+    if not FRISBEE_HOLDER.get(current_channel_id):
+        FRISBEE_HOLDER[current_channel_id] = {'frisbee_holder': None, 'chain': 0}
+
+    logging.info(FRISBEE_HOLDER)
+    logging.info(current_user)
+    logging.info(target_name)
+
+    if (not FRISBEE_HOLDER[current_channel_id]['frisbee_holder']) or (FRISBEE_HOLDER[current_channel_id]['frisbee_holder'] == current_user):
+        message = f"You throw the disc at {target_name} and they make the catch! Great throw!"
+        FRISBEE_HOLDER[current_channel_id]['frisbee_holder'] = target_name
+        FRISBEE_HOLDER[current_channel_id]['chain'] += 1
+        if FRISBEE_HOLDER[current_channel_id]['chain'] > 2:
+            message += f"\n   :tada: YOU GUYS SCORED! :tada:"
+    else:
+        message = "You can't toss what you don't have, sucker!"
+
+    return render_message(message)
 
 
 @app.route("/snowball", methods=["POST"])
