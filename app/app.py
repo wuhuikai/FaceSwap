@@ -16,7 +16,7 @@ from utils.helpers import download_with_user_agent
 NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
 FORBIDDEN = "Forbidden"
-HIT_PROBABILITY = 0.4
+HIT_PROBABILITY = 0.6
 
 STATISTICS_TABLE = {}
 
@@ -160,18 +160,18 @@ def outcomes(probability, current_user, target):
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
         STATISTICS_TABLE[current_user]["Hit"] += 1
     else:
-        if probability < 0.6:
+        missing_probability = 1 - HIT_PROBABILITY
+        if probability < (0.3 * missing_probability + HIT_PROBABILITY):
             message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
-        elif probability < 0.8:
-            if target != "Stanley Phu" and current_user:
+        elif probability < (0.6 * missing_probability + HIT_PROBABILITY):
+            if target != "Stanley Phu" and current_user != "Stanley Phu":
                 person_hit = "Stanley Phu"
             else:
                 person_hit = "Yen-Ting Chen"
             message = f"You hit the ceiling, it bounces, and hits {person_hit} on the face instead. Try again maybe?"
-        elif probability < 0.9:
+        elif probability < (0.8 * missing_probability + HIT_PROBABILITY):
             message = (
-                f"You tried to hit {target} but hit the monitor instead. "
-                + "You may or may not have left a dent on that monitor."
+                f"You tried to hit {target} but hit the monitor instead. You may or may not have left a dent on that monitor.",  # noqa E501
             )
         else:
             message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
