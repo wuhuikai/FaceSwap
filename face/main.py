@@ -1,11 +1,11 @@
 #! /usr/bin/env python
-import os
-import cv2
 import argparse
+import os
+
+import cv2
 
 from face.face_detection import select_face
 from face.face_swap import face_swap
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FaceSwapApp")

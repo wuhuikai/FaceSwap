@@ -1,9 +1,8 @@
 import tempfile
 import urllib
-
-import cv2
 from urllib.request import urlopen
 
+import cv2
 import numpy as np
 
 
