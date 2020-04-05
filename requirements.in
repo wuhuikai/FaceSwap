@@ -1,7 +1,5 @@
-black
 dlib
 flask
-flake8
 fuzzywuzzy
 gunicorn
 numpy

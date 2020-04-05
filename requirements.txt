@@ -4,31 +4,19 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-appdirs==1.4.3            # via black
-attrs==19.3.0             # via black
-black==19.10b0            # via -r requirements.in
-click==7.0                # via black, flask
+click==7.0                # via flask
 dlib==19.19.0             # via -r requirements.in
-entrypoints==0.3          # via flake8
-flake8==3.7.9             # via -r requirements.in
 flask==1.1.1              # via -r requirements.in
 fuzzywuzzy==0.18.0        # via -r requirements.in
 gunicorn==20.0.4          # via -r requirements.in
 itsdangerous==1.1.0       # via flask
 jinja2==2.11.1            # via flask
 markupsafe==1.1.1         # via jinja2
-mccabe==0.6.1             # via flake8
 numpy==1.18.1             # via -r requirements.in, opencv-contrib-python-headless, opencv-python-headless, scipy
 opencv-contrib-python-headless==4.2.0.32  # via -r requirements.in
 opencv-python-headless==4.2.0.32  # via -r requirements.in
-pathspec==0.7.0           # via black
-pycodestyle==2.5.0        # via flake8
-pyflakes==2.1.1           # via flake8
 python-levenshtein==0.12.0  # via -r requirements.in
-regex==2020.2.20          # via black
 scipy==1.4.1              # via -r requirements.in
-toml==0.10.0              # via black
-typed-ast==1.4.1          # via black
 werkzeug==1.0.0           # via flask
 
 # The following packages are considered to be unsafe in a requirements file:
