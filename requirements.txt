@@ -4,44 +4,20 @@
 #
 #    pip-compile --output-file=requirements.txt requirements.in
 #
-appdirs==1.4.3            # via black, virtualenv
-attrs==19.3.0             # via black
-black==19.10b0
-cfgv==3.1.0               # via pre-commit
-click==7.0                # via black, flask
-distlib==0.3.0            # via virtualenv
-dlib==19.19.0
-entrypoints==0.3          # via flake8
-filelock==3.0.12          # via virtualenv
-flake8==3.7.9
-flask==1.1.1
-fuzzywuzzy==0.18.0
-gunicorn==20.0.4
-identify==1.4.11          # via pre-commit
-importlib-metadata==1.5.0  # via importlib-resources, pre-commit, virtualenv
-importlib-resources==1.2.0  # via pre-commit, virtualenv
+click==7.0                # via flask
+dlib==19.19.0             # via -r requirements.in
+flask==1.1.1              # via -r requirements.in
+fuzzywuzzy==0.18.0        # via -r requirements.in
+gunicorn==20.0.4          # via -r requirements.in
 itsdangerous==1.1.0       # via flask
 jinja2==2.11.1            # via flask
 markupsafe==1.1.1         # via jinja2
-mccabe==0.6.1             # via flake8
-nodeenv==1.3.5            # via pre-commit
-numpy==1.18.1
-opencv-contrib-python-headless==4.2.0.32
-opencv-python-headless==4.2.0.32
-pathspec==0.7.0           # via black
-pre-commit==2.1.1
-pycodestyle==2.5.0        # via flake8
-pyflakes==2.1.1           # via flake8
-python-levenshtein==0.12.0
-pyyaml==5.3               # via pre-commit
-regex==2020.2.20          # via black
-scipy==1.4.1
-six==1.14.0               # via virtualenv
-toml==0.10.0              # via black, pre-commit
-typed-ast==1.4.1          # via black
-virtualenv==20.0.8        # via pre-commit
+numpy==1.18.1             # via -r requirements.in, opencv-contrib-python-headless, opencv-python-headless, scipy
+opencv-contrib-python-headless==4.2.0.32  # via -r requirements.in
+opencv-python-headless==4.2.0.32  # via -r requirements.in
+python-levenshtein==0.12.0  # via -r requirements.in
+scipy==1.4.1              # via -r requirements.in
 werkzeug==1.0.0           # via flask
-zipp==3.1.0               # via importlib-metadata, importlib-resources
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

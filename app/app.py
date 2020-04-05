@@ -1,34 +1,24 @@
 import base64
 import glob
-import json
 import logging
 import os
 import tempfile
+from random import random
 
 import cv2
-
-from flask import (
-    Flask,
-    jsonify,
-    abort,
-    make_response,
-    request,
-    send_file,
-)
+from flask import Flask, abort, jsonify, make_response, request, send_file
 from fuzzywuzzy import process
 
 from face.face_detection import select_face, select_face_update
 from face.face_swap import face_swap
 from utils.helpers import download_with_user_agent
-from random import random
-
 
 NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
 FORBIDDEN = "Forbidden"
-HIT_PROBABILITY = .4
+HIT_PROBABILITY = 0.4
 
-STATISTICS_TABLE= {}
+STATISTICS_TABLE = {}
 
 app = Flask(__name__)
 
@@ -75,22 +65,22 @@ def snowball():
     probability = random()
     logging.info(request.form)
     request_text = request.form["text"]
-    
-    if not request.form['token'] == '40gIKRHZUlj1e5r9Ya4m5X9Z':
+
+    if not request.form["token"] == "40gIKRHZUlj1e5r9Ya4m5X9Z":
         return make_response(jsonify({"error": FORBIDDEN}), 403)
 
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
-    
-    current_user = clean_name(request.form['user_name'])
+
+    current_user = clean_name(request.form["user_name"])
 
     if not STATISTICS_TABLE.get(current_user):
-        STATISTICS_TABLE[current_user] = {'Hit': 0, 'Attempt': 0}
- 
-    if 'stats' == request_text:
+        STATISTICS_TABLE[current_user] = {"Hit": 0, "Attempt": 0}
+
+    if "stats" == request_text:
         return render_stats(current_user)
 
-    if 'rankings' == request_text:
+    if "rankings" == request_text:
         return render_rankings()
 
     target_name = clean_name(request_text)
@@ -109,64 +99,80 @@ def clean_name(potential_name):
         name = potential_name.replace(">", "").replace(".", " ").title()
     return name
 
+
 def render_rankings():
     message = "You must throw at least once to be ranked.\n"
-    filtered_STATISTICS_TABLE = {k:v for k,v in STATISTICS_TABLE.items() if v['Attempt']!=0}
-    rankings_table_by_hit_success = ''.join([ f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit'], reverse=True)][:10])
+    filtered_STATISTICS_TABLE = {k: v for k, v in STATISTICS_TABLE.items() if v["Attempt"] != 0}
+    rankings_table_by_hit_success = "".join(
+        [
+            f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n"
+            for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]["Hit"], reverse=True)
+        ][:10]
+    )
 
-    rankings_table_by_hit_accuracy = ''.join([ f"{key} Accuracy: {value['Hit']/value['Attempt']:.2f}\n" for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]['Hit']/item[1]['Attempt'], reverse=True)][:10])
+    rankings_table_by_hit_accuracy = "".join(
+        [
+            f"{key} Accuracy: {value['Hit']/value['Attempt']:.2f}\n"
+            for key, value in sorted(
+                filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]["Hit"] / item[1]["Attempt"], reverse=True
+            )
+        ][:10]
+    )
 
-    return render_message(message + rankings_table_by_hit_success + '\n\n' + rankings_table_by_hit_accuracy)
+    return render_message(message + rankings_table_by_hit_success + "\n\n" + rankings_table_by_hit_accuracy)
+
 
 def render_stats(current_user):
-    if STATISTICS_TABLE[current_user]['Attempt'] == 0:
+    if STATISTICS_TABLE[current_user]["Attempt"] == 0:
         return render_message("ERROR, DATA NOT FOUND \nAre we human? Or are we dancer?")
 
-    accuracy = STATISTICS_TABLE[current_user]['Hit']/ STATISTICS_TABLE[current_user]['Attempt']
+    accuracy = STATISTICS_TABLE[current_user]["Hit"] / STATISTICS_TABLE[current_user]["Attempt"]
 
-    if accuracy > .9:
-        message = f'Turn off your hacks or you will get nerfed!'
-    elif accuracy > .5:
-        message = f'You have a great throw! Keep it up!'
-    elif accuracy > .3:
-        message = f'You are alright. Statistically speaking you are very much just only alright.'
-    elif accuracy > .1:
-        message = f'Probably work on your aim during your freetime.'
+    if accuracy > 0.9:
+        message = f"Turn off your hacks or you will get nerfed!"
+    elif accuracy > 0.5:
+        message = f"You have a great throw! Keep it up!"
+    elif accuracy > 0.3:
+        message = f"You are alright. Statistically speaking you are very much just only alright."
+    elif accuracy > 0.1:
+        message = f"Probably work on your aim during your freetime."
     else:
-        if STATISTICS_TABLE[current_user]['Attempt'] > 10:
-            message = f'Hey buddy, everything alright? Consider bribing someone... You probably need help.'
-        else: 
-            message = f'Keep trying! May the odds always be in your favor!'
+        if STATISTICS_TABLE[current_user]["Attempt"] > 10:
+            message = f"Hey buddy, everything alright? Consider bribing someone... You probably need help."
+        else:
+            message = f"Keep trying! May the odds always be in your favor!"
 
-    stat_table = '\n'+ ''.join([ f'{key}: {value}    '  for key, value in STATISTICS_TABLE[current_user].items()]) + f'\n {current_user} has an accuracy of {accuracy:.2f}'
+    stat_table = (
+        "\n"
+        + "".join([f"{key}: {value}    " for key, value in STATISTICS_TABLE[current_user].items()])
+        + f"\n {current_user} has an accuracy of {accuracy:.2f}"
+    )
     return render_message(message + stat_table)
 
 
 def render_message(message):
-    return jsonify(
-                      {
-                          "response_type": "in_channel",
-                          "text": f"{message}",
-                      }
-                  )
+    return jsonify({"response_type": "in_channel", "text": f"{message}"})
 
-    
+
 def outcomes(probability, current_user, target):
-    STATISTICS_TABLE[current_user]['Attempt'] += 1
+    STATISTICS_TABLE[current_user]["Attempt"] += 1
     if probability < HIT_PROBABILITY:
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
-        STATISTICS_TABLE[current_user]['Hit'] += 1
+        STATISTICS_TABLE[current_user]["Hit"] += 1
     else:
-        if probability < .6:
+        if probability < 0.6:
             message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
-        elif probability < .8:
+        elif probability < 0.8:
             if target != "Stanley Phu" and current_user:
                 person_hit = "Stanley Phu"
             else:
                 person_hit = "Yen-Ting Chen"
             message = f"You hit the ceiling, it bounces, and hits {person_hit} on the face instead. Try again maybe?"
-        elif probability < .9:
-            message = f"You tried to hit {target} but hit the monitor instead. You may or may not have left a dent on that monitor."
+        elif probability < 0.9:
+            message = (
+                f"You tried to hit {target} but hit the monitor instead. "
+                + "You may or may not have left a dent on that monitor."
+            )
         else:
             message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
     return message
@@ -200,7 +206,6 @@ def swap():
     logging.info(dst_name_or_url)
     logging.info(src_name_or_url)
 
-
     # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
@@ -225,7 +230,9 @@ def swap():
 
             for face in dest_faces:
                 dst_points, dst_shape, dst_face = face
-                dst_img = face_swap(src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color)
+                dst_img = face_swap(
+                    src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color
+                )
 
             tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
             cv2.imwrite(tmp_file.name, dst_img)

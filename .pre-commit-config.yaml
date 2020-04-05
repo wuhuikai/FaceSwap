@@ -1,10 +1,34 @@
 repos:
--   repo: https://github.com/ambv/black
-    rev: stable
-    hooks:
-    - id: black
-      language_version: python3.7
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.2.3
-    hooks:
-    - id: flake8
+- repo: https://github.com/ambv/black
+  rev: stable
+  hooks:
+  - id: black
+    language_version: python3
+- repo: https://github.com/asottile/seed-isort-config
+  rev: v2.1.0
+  hooks:
+  - id: seed-isort-config
+- repo: https://github.com/timothycrosley/isort
+  rev: 4.3.21
+  hooks:
+  - id: isort
+- repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+  rev: v1.1.0
+  hooks:
+  - id: python-safety-dependencies-check
+- repo: https://gitlab.com/pycqa/flake8
+  rev: 3.7.9
+  hooks:
+  - id: flake8
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v2.5.0
+  hooks:
+  - id: check-yaml
+  - id: check-json
+  - id: pretty-format-json
+    args: ['--autofix']
+- repo: git@github.com:Yelp/detect-secrets
+  rev: v0.13.1
+  hooks:
+  - id: detect-secrets
+    args: ['--baseline', '.secrets.baseline']

@@ -1,8 +1,9 @@
 #! /usr/bin/env python
+import logging
+
 import cv2
 import numpy as np
 import scipy.spatial as spatial
-import logging
 
 
 # 3D Transform

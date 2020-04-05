@@ -1,7 +1,8 @@
-import os
-import cv2
-import logging
 import argparse
+import logging
+import os
+
+import cv2
 
 from face.face_detection import select_face
 from face.face_swap import face_swap
