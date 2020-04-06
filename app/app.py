@@ -6,6 +6,7 @@ import tempfile
 from random import random
 
 import cv2
+import requests
 from flask import Flask, abort, jsonify, make_response, request, send_file
 from fuzzywuzzy import process
 
@@ -85,7 +86,8 @@ def throw():
                 "https://slack.com/api/conversations.members", {"token": FRISBEE_TOKEN, "channel": current_channel_id}
             )
             members = response.json()["members"]
-        except:
+        except Exception as e:
+            logging.info(e)
             return render_message("Can't use in DMs")
         FRISBEE_HOLDER[current_channel_id] = {"frisbee_holder": None, "chain": 0, "members": members}
 
@@ -325,6 +327,8 @@ def swap():
 
             return (json_return, 200)
     return make_response(jsonify({"error": BAD_REQUEST}), 400)
+
+
 def frisbee_outcomes(probability, target):
     success = False
     if probability < TOSS_PROBABILITY:
@@ -332,9 +336,11 @@ def frisbee_outcomes(probability, target):
         success = True
     else:
         if probability < 0.9:
-            message = f"1... 2... You tripped and threw the disc straight into the ground. {target} and Cindy give you a death stare."
+            message = f"1... 2... You tripped and threw the disc straight into the ground. {target} and Cindy give you a death stare."  # noqa E501
+
         else:
-            message = f"1... 2... 3... LEIASA, the impartial referee that she is, in her great wisdom, called a stall. WTF it’s only been 3 seconds."
+            message = f"1... 2... 3... LEIASA, the impartial referee that she is, in her great wisdom, called a stall. WTF it’s only been 3 seconds."  # noqa E501
+
     return success, message
 
 
@@ -354,4 +360,3 @@ def _find_person(name):
 
 if __name__ == "__main__":
     app.run(debug=True)
-
