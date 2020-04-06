@@ -20,7 +20,7 @@ class VideoHandler(object):
             args.save_path,
             cv2.VideoWriter_fourcc(*"MJPG"),
             self.video.get(cv2.CAP_PROP_FPS),
-            (int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT)),),
+            (int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH)), int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))),
         )
 
     def start(self):
@@ -32,7 +32,7 @@ class VideoHandler(object):
             dst_points, dst_shape, dst_face = select_face(dst_img, choose=False)
             if dst_points is not None:
                 dst_img = face_swap(
-                    self.src_face, dst_face, self.src_points, dst_points, dst_shape, dst_img, self.args, 68,
+                    self.src_face, dst_face, self.src_points, dst_points, dst_shape, dst_img, self.args, 68
                 )
             self.writer.write(dst_img)
             if self.args.show:

@@ -51,7 +51,7 @@ def select_face_update(im, r=10):
         x, y = max(0, left - r), max(0, top - r)
         w, h = min(right + r, im_h) - x, min(bottom + r, im_w) - y
 
-        final_faces.append((points - np.asarray([[x, y]]), (x, y, w, h), im[y : y + h, x : x + w],))  # noqa: E203
+        final_faces.append((points - np.asarray([[x, y]]), (x, y, w, h), im[y : y + h, x : x + w]))  # noqa: E203
     return final_faces
 
 
@@ -79,9 +79,7 @@ def select_face(im, r=10, choose=False):
         im_copy = im.copy()
         for face in faces:
             # draw the face bounding box
-            cv2.rectangle(
-                im_copy, (face.left(), face.top()), (face.right(), face.bottom()), (0, 0, 255), 1,
-            )
+            cv2.rectangle(im_copy, (face.left(), face.top()), (face.right(), face.bottom()), (0, 0, 255), 1)
         cv2.imshow("Click the Face:", im_copy)
         cv2.setMouseCallback("Click the Face:", click_on_face)
         while len(bbox) == 0:
@@ -98,8 +96,4 @@ def select_face(im, r=10, choose=False):
     x, y = max(0, left - r), max(0, top - r)
     w, h = min(right + r, im_h) - x, min(bottom + r, im_w) - y
 
-    return (
-        points - np.asarray([[x, y]]),
-        (x, y, w, h),
-        im[y : y + h, x : x + w],  # noqa: E203
-    )
+    return (points - np.asarray([[x, y]]), (x, y, w, h), im[y : y + h, x : x + w])  # noqa: E203

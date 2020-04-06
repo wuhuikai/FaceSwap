@@ -14,9 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("--out", required=True, help="Path for storing output images")
     parser.add_argument("--warp_2d", default=False, action="store_true", help="2d or 3d warp")
     parser.add_argument("--correct_color", default=False, action="store_true", help="Correct color")
-    parser.add_argument(
-        "--no_debug_window", default=False, action="store_true", help="Don't show debug window",
-    )
+    parser.add_argument("--no_debug_window", default=False, action="store_true", help="Don't show debug window")
     args = parser.parse_args()
 
     # Read images
