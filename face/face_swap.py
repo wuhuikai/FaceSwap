@@ -121,7 +121,7 @@ def transformation_from_points(points1, points2):
 def warp_image_2d(im, M, dshape):
     output_im = np.zeros(dshape, dtype=im.dtype)
     cv2.warpAffine(
-        im, M[:2], (dshape[1], dshape[0]), dst=output_im, borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP,
+        im, M[:2], (dshape[1], dshape[0]), dst=output_im, borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP
     )
 
     return output_im
@@ -199,7 +199,7 @@ def check_points(img, points):
 
 
 def face_swap(
-    src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d=False, correct_color=False, end=48,
+    src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d=False, correct_color=False, end=48
 ):
     h, w = dst_face.shape[:2]
 
@@ -218,7 +218,7 @@ def face_swap(
     if warp_2d:
         unwarped_src_face = warp_image_3d(warped_src_face, dst_points[:end], src_points[:end], src_face.shape[:2])
         warped_src_face = warp_image_2d(
-            unwarped_src_face, transformation_from_points(dst_points, src_points), (h, w, 3),
+            unwarped_src_face, transformation_from_points(dst_points, src_points), (h, w, 3)
         )
 
         mask = mask_from_points((h, w), dst_points)

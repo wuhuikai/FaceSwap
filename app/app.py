@@ -247,10 +247,7 @@ def swap():
             )
             logging.info(tmp_file_encoded)
 
-            return (
-                json_return,
-                200,
-            )
+            return (json_return, 200)
     return make_response(jsonify({"error": BAD_REQUEST}), 400)
 
 
