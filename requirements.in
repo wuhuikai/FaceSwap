@@ -6,4 +6,5 @@ numpy
 opencv-contrib-python-headless
 opencv-python-headless
 python-Levenshtein
+requests
 scipy
