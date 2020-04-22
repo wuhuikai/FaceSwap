@@ -81,15 +81,14 @@ def throw():
     target_user_id = get_user_id(request_text)
 
     if not FRISBEE_HOLDER.get(current_channel_id):
-        try:
-            response = requests.get(
-                "https://slack.com/api/conversations.members", {"token": FRISBEE_TOKEN, "channel": current_channel_id}
-            )
-            members = response.json()["members"]
-        except Exception as e:
-            logging.info(e)
-            return render_message("Can't use in DMs")
+        members = fetch_member(current_channel_id)
         FRISBEE_HOLDER[current_channel_id] = {"frisbee_holder": None, "chain": 0, "members": members}
+
+    if request_text == "refresh" and (current_user == "Stanley Phu" or current_user == "Kevin Hsieh"):
+        members = fetch_member(current_channel_id)
+        FRISBEE_HOLDER[current_channel_id] = {"frisbee_holder": None, "chain": 0, "members": members}
+        message = "Refreshing..... Refreshed"
+        return render_message(message)
 
     if request_text == "reset" and (current_user == "Stanley Phu" or current_user == "Kevin Hsieh"):
         members = FRISBEE_HOLDER[current_channel_id]["members"]
@@ -129,6 +128,17 @@ def throw():
         message = "You can't toss what you don't have, sucker!"
 
     return render_message(message)
+
+
+def fetch_member(current_channel_id):
+    try:
+        response = requests.get(
+            "https://slack.com/api/conversations.members", {"token": FRISBEE_TOKEN, "channel": current_channel_id}
+        )
+        return response.json()["members"]
+    except Exception as e:
+        logging.info(e)
+        return render_message("Can't use in DMs")
 
 
 @app.route("/snowball", methods=["POST"])
