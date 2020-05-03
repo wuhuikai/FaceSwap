@@ -4,6 +4,8 @@ ENV APP_HOME /app
 WORKDIR $APP_HOME
 ENV PYTHONPATH /
 ENV DEBIAN_FRONTEND=noninteractive
+ARG frisbee_token 
+ENV FRISBEE_TOKEN=$frisbee_token
 
 # Get necessary system packages
 RUN apt-get update \

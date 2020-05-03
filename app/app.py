@@ -6,6 +6,7 @@ import tempfile
 from random import random
 
 import cv2
+import requests
 from flask import Flask, abort, jsonify, make_response, request, send_file
 from fuzzywuzzy import process
 
@@ -17,6 +18,9 @@ NOT_FOUND = "Not found"
 BAD_REQUEST = "Bad request"
 FORBIDDEN = "Forbidden"
 HIT_PROBABILITY = 0.6
+FRISBEE_HOLDER = {}
+TOSS_PROBABILITY = 0.8
+FRISBEE_TOKEN = os.environ.get("FRISBEE_TOKEN")
 
 STATISTICS_TABLE = {}
 
@@ -60,6 +64,83 @@ def image(id):
         return not_found()
 
 
+@app.route("/frisbee", methods=["POST"])
+def throw():
+    logging.info(request.form)
+    request_text = request.form["text"]
+
+    if not request.form["token"] == "hv1Ga1tpwrqIK7np4LxiLu45":
+        return make_response(jsonify({"error": FORBIDDEN}), 403)
+
+    probability = random()
+
+    current_channel_id = request.form["channel_id"]
+
+    current_user = clean_name(request.form["user_name"])
+    target_name = clean_name(request_text)
+    target_user_id = get_user_id(request_text)
+
+    if not FRISBEE_HOLDER.get(current_channel_id):
+        members = fetch_member(current_channel_id)
+        FRISBEE_HOLDER[current_channel_id] = {"frisbee_holder": None, "chain": 0, "members": members}
+
+    if request_text == "refresh" and (current_user == "Stanley Phu" or current_user == "Kevin Hsieh"):
+        members = fetch_member(current_channel_id)
+        FRISBEE_HOLDER[current_channel_id] = {"frisbee_holder": None, "chain": 0, "members": members}
+        message = "Refreshing..... Refreshed"
+        return render_message(message)
+
+    if request_text == "reset" and (current_user == "Stanley Phu" or current_user == "Kevin Hsieh"):
+        members = FRISBEE_HOLDER[current_channel_id]["members"]
+        FRISBEE_HOLDER[current_channel_id] = {"frisbee_holder": None, "chain": 0, "members": members}
+        message = "The game has been reset."
+        return render_message(message)
+
+    if len(request_text.split("|")) < 2 or not target_user_id:
+        return render_message("You have to toss this to someone with the @ handle!")
+
+    if current_user == target_name:
+        return render_message("Quit hogging the disc asshole!")
+
+    logging.info(FRISBEE_HOLDER)
+    logging.info(current_user)
+    logging.info(target_name)
+
+    if (not FRISBEE_HOLDER[current_channel_id]["frisbee_holder"]) or (
+        FRISBEE_HOLDER[current_channel_id]["frisbee_holder"] == current_user
+    ):
+        if target_user_id in FRISBEE_HOLDER[current_channel_id]["members"]:
+            success, message = frisbee_outcomes(probability, target_name)
+            if success:
+                FRISBEE_HOLDER[current_channel_id]["frisbee_holder"] = target_name
+                FRISBEE_HOLDER[current_channel_id]["chain"] += 1
+                if FRISBEE_HOLDER[current_channel_id]["chain"] > 2:
+                    FRISBEE_HOLDER[current_channel_id]["chain"] = 0
+                    FRISBEE_HOLDER[current_channel_id]["frisbee_holder"] = None
+                    message += f"\n   :tada: YOU GUYS SCORED! :tada:"
+            else:
+                FRISBEE_HOLDER[current_channel_id]["chain"] = 0
+                FRISBEE_HOLDER[current_channel_id]["frisbee_holder"] = None
+                message += f"\nSomeone pick up the disc and throw it!"
+        else:
+            message = "Toss it to someone in the channel, loser."
+    else:
+        message = "You can't toss what you don't have, sucker!"
+
+    return render_message(message)
+
+
+def fetch_member(current_channel_id):
+    try:
+        response = requests.get(
+            "https://slack.com/api/conversations.members", {"token": FRISBEE_TOKEN, "channel": current_channel_id}
+        )
+        return response.json()["members"]
+    except Exception as e:
+        logging.info(e)
+        return render_message("Can't use in DMs")
+
+
 @app.route("/snowball", methods=["POST"])
 def snowball():
     probability = random()
@@ -99,6 +180,14 @@ def clean_name(potential_name):
     else:
         name = potential_name.replace(">", "").replace(".", " ").title()
     return name
+
+
+def get_user_id(user_handle):
+    if "|" in user_handle:
+        name = user_handle.split("|")[0].replace("<", "").replace("@", "")
+        return name
+
+    return None
 
 
 def render_rankings():
@@ -248,6 +337,21 @@ def swap():
 
             return (json_return, 200)
     return make_response(jsonify({"error": BAD_REQUEST}), 400)
+
+
+def frisbee_outcomes(probability, target):
+    success = False
+    if probability < TOSS_PROBABILITY:
+        message = f"1... 2... 3... You throw the disc at {target} and they make the catch! Great throw!"
+        success = True
+    else:
+        if probability < 0.9:
+            message = f"1... 2... You tripped and threw the disc straight into the ground. {target} and Cindy give you a death stare."  # noqa E501
+
+        else:
+            message = f"1... 2... 3... LEIASA, the impartial referee that she is, in her great wisdom, called a stall. WTF it’s only been 3 seconds."  # noqa E501
+
+    return success, message
 
 
 def _find_person(name):
