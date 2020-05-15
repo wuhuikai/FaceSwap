@@ -3,6 +3,7 @@ import glob
 import logging
 import os
 import tempfile
+from datetime import datetime
 from random import random
 
 import cv2
@@ -155,9 +156,14 @@ def snowball():
     request_text = " ".join(request_text.split())
 
     current_user = clean_name(request.form["user_name"])
+    target_name = clean_name(request_text)
+
+    if target_name == current_user:
+        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
+        return render_message(message)
 
     if not SNOWBALL_TABLE.get(current_user):
-        SNOWBALL_TABLE[current_user] = {"Hit": 0, "Attempt": 0}
+        SNOWBALL_TABLE[current_user] = {"Hit": 0, "Attempt": 0, "Combo": 0}
 
     if "stats" == request_text:
         return render_stats(current_user)
@@ -165,10 +171,18 @@ def snowball():
     if "rankings" == request_text:
         return render_rankings()
 
-    target_name = clean_name(request_text)
-    if target_name == current_user:
-        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
-        return render_message(message)
+    if not SNOWBALL_TABLE.get(target_name):
+        SNOWBALL_TABLE[target_name] = {"Hit": 0, "Attempt": 0, "Combo": 0}
+
+    if SNOWBALL_TABLE[current_user].get("Stunned_Time"):
+        time_diff_in_seconds = (datetime.now() - SNOWBALL_TABLE[current_user]["Stunned_Time"]).seconds
+        if time_diff_in_seconds > 1500:
+            message = (
+                f"You are stunned because some guy threw a golden snowball at you and knocked you out. What a dick!"
+            )
+            message = f"\n"
+            message = f"You can't do anything for the next {(1500 - time_diff_in_seconds).seconds} seconds"
+            return render_message(message)
 
     message = snowball_outcomes(probability, current_user, target_name)
     return render_message(message)
@@ -246,11 +260,29 @@ def render_message(message):
 
 def snowball_outcomes(probability, current_user, target):
     SNOWBALL_TABLE[current_user]["Attempt"] += 1
+    if SNOWBALL_TABLE[current_user]["Combo"] == 3:
+        message = (
+            f"You threw a snowball made of solid 24k gold. It hit {target} in the face and knocked him out for good."
+        )
+        message += f"\n"
+        message += (
+            f"It's honestly kind of messed up. {target} can't do anything snowball related for the next 5 minutes."
+        )
+        SNOWBALL_TABLE[target]["Stunned_Time"] = datetime.now()
+        SNOWBALL_TABLE[current_user]["Hit"] += 1
+        SNOWBALL_TABLE[current_user]["Combo"] = 0
+        return message
+
     if probability < HIT_PROBABILITY:
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
         SNOWBALL_TABLE[current_user]["Hit"] += 1
+        SNOWBALL_TABLE[current_user]["Combo"] += 1
+        if SNOWBALL_TABLE[current_user]["Combo"] == 3:
+            message += "\n"
+            message += "You're on a streak! You get a golden snowball! Your next hit will prevent the person from throwing for 5 minutes!"  # noqa E501
     else:
         missing_probability = 1 - HIT_PROBABILITY
+        SNOWBALL_TABLE[current_user]["Combo"] = 0
         if probability < (0.3 * missing_probability + HIT_PROBABILITY):
             message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
         elif probability < (0.6 * missing_probability + HIT_PROBABILITY):
