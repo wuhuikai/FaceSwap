@@ -22,7 +22,7 @@ FRISBEE_HOLDER = {}
 TOSS_PROBABILITY = 0.8
 FRISBEE_TOKEN = os.environ.get("FRISBEE_TOKEN")
 
-STATISTICS_TABLE = {}
+SNOWBALL_TABLE = {}
 
 app = Flask(__name__)
 
@@ -156,8 +156,8 @@ def snowball():
 
     current_user = clean_name(request.form["user_name"])
 
-    if not STATISTICS_TABLE.get(current_user):
-        STATISTICS_TABLE[current_user] = {"Hit": 0, "Attempt": 0}
+    if not SNOWBALL_TABLE.get(current_user):
+        SNOWBALL_TABLE[current_user] = {"Hit": 0, "Attempt": 0}
 
     if "stats" == request_text:
         return render_stats(current_user)
@@ -192,11 +192,11 @@ def get_user_id(user_handle):
 
 def render_rankings():
     message = "You must throw at least once to be ranked.\n"
-    filtered_STATISTICS_TABLE = {k: v for k, v in STATISTICS_TABLE.items() if v["Attempt"] != 0}
+    filtered_SNOWBALL_TABLE = {k: v for k, v in SNOWBALL_TABLE.items() if v["Attempt"] != 0}
     rankings_table_by_hit_success = "".join(
         [
             f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n"
-            for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]["Hit"], reverse=True)
+            for key, value in sorted(filtered_SNOWBALL_TABLE.items(), key=lambda item: item[1]["Hit"], reverse=True)
         ][:10]
     )
 
@@ -204,7 +204,7 @@ def render_rankings():
         [
             f"{key} Accuracy: {value['Hit']/value['Attempt']:.2f}\n"
             for key, value in sorted(
-                filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]["Hit"] / item[1]["Attempt"], reverse=True
+                filtered_SNOWBALL_TABLE.items(), key=lambda item: item[1]["Hit"] / item[1]["Attempt"], reverse=True
             )
         ][:10]
     )
@@ -213,10 +213,10 @@ def render_rankings():
 
 
 def render_stats(current_user):
-    if STATISTICS_TABLE[current_user]["Attempt"] == 0:
+    if SNOWBALL_TABLE[current_user]["Attempt"] == 0:
         return render_message("ERROR, DATA NOT FOUND \nAre we human? Or are we dancer?")
 
-    accuracy = STATISTICS_TABLE[current_user]["Hit"] / STATISTICS_TABLE[current_user]["Attempt"]
+    accuracy = SNOWBALL_TABLE[current_user]["Hit"] / SNOWBALL_TABLE[current_user]["Attempt"]
 
     if accuracy > 0.9:
         message = f"Turn off your hacks or you will get nerfed!"
@@ -227,14 +227,14 @@ def render_stats(current_user):
     elif accuracy > 0.1:
         message = f"Probably work on your aim during your freetime."
     else:
-        if STATISTICS_TABLE[current_user]["Attempt"] > 10:
+        if SNOWBALL_TABLE[current_user]["Attempt"] > 10:
             message = f"Hey buddy, everything alright? Consider bribing someone... You probably need help."
         else:
             message = f"Keep trying! May the odds always be in your favor!"
 
     stat_table = (
         "\n"
-        + "".join([f"{key}: {value}    " for key, value in STATISTICS_TABLE[current_user].items()])
+        + "".join([f"{key}: {value}    " for key, value in SNOWBALL_TABLE[current_user].items()])
         + f"\n {current_user} has an accuracy of {accuracy:.2f}"
     )
     return render_message(message + stat_table)
@@ -245,10 +245,10 @@ def render_message(message):
 
 
 def snowball_outcomes(probability, current_user, target):
-    STATISTICS_TABLE[current_user]["Attempt"] += 1
+    SNOWBALL_TABLE[current_user]["Attempt"] += 1
     if probability < HIT_PROBABILITY:
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
-        STATISTICS_TABLE[current_user]["Hit"] += 1
+        SNOWBALL_TABLE[current_user]["Hit"] += 1
     else:
         missing_probability = 1 - HIT_PROBABILITY
         if probability < (0.3 * missing_probability + HIT_PROBABILITY):
