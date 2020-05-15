@@ -262,7 +262,7 @@ def snowball_outcomes(probability, current_user, target):
     SNOWBALL_TABLE[current_user]["Attempt"] += 1
     if SNOWBALL_TABLE[current_user]["Combo"] == 3:
         message = (
-            f"You threw a snowball made of solid 24k gold. It hit {target} in the face and knocked him out for good."
+            f"You threw a snowball made of solid 24k gold. It hit {target} in the face and knocked them out for good."
         )
         message += f"\n"
         message += (
