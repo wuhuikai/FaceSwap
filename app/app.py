@@ -170,7 +170,7 @@ def snowball():
         message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
         return render_message(message)
 
-    message = outcomes(probability, current_user, target_name)
+    message = snowball_outcomes(probability, current_user, target_name)
     return render_message(message)
 
 
@@ -244,7 +244,7 @@ def render_message(message):
     return jsonify({"response_type": "in_channel", "text": f"{message}"})
 
 
-def outcomes(probability, current_user, target):
+def snowball_outcomes(probability, current_user, target):
     STATISTICS_TABLE[current_user]["Attempt"] += 1
     if probability < HIT_PROBABILITY:
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
