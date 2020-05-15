@@ -176,12 +176,12 @@ def snowball():
 
     if SNOWBALL_TABLE[current_user].get("Stunned_Time"):
         time_diff_in_seconds = (datetime.now() - SNOWBALL_TABLE[current_user]["Stunned_Time"]).seconds
-        if time_diff_in_seconds > 1500:
+        if time_diff_in_seconds <= 1500:
             message = (
                 f"You are stunned because some guy threw a golden snowball at you and knocked you out. What a dick!"
             )
             message = f"\n"
-            message = f"You can't do anything for the next {(1500 - time_diff_in_seconds).seconds} seconds"
+            message = f"You can't do anything for the next {(1500 - time_diff_in_seconds)} seconds"
             return render_message(message)
 
     message = snowball_outcomes(probability, current_user, target_name)
