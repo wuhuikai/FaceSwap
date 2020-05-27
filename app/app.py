@@ -178,7 +178,7 @@ def snowball():
         time_diff_in_seconds = (datetime.now() - SNOWBALL_TABLE[current_user]["Stunned_Time"]).seconds
         if time_diff_in_seconds <= 300:
             message = (
-                f"You are stunned because some guy threw a golden snowball at you and knocked you out. What a dick!"
+                f"You are stunned because some guy threw a golden snowball at you and knocked you out. What a jerk!"
             )
             message += f"\n"
             message += f"You can't do anything for the next {(300 - time_diff_in_seconds)} seconds"
