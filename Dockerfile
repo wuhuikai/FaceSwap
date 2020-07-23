@@ -28,7 +28,6 @@ RUN pip3 install --compile --no-cache-dir --upgrade pip setuptools
 RUN pip3 install --compile --no-cache-dir -r requirements.txt
 
 # Copy over code
-COPY people /people
 COPY app app
 COPY face face
 COPY utils utils
