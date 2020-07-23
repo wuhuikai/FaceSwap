@@ -322,15 +322,16 @@ def swap():
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text_by_quotes = request_text.split('"')
     params = {}
-    if request_text_by_quotes[0] == "top" or request_text_by_quotes[0] == "bottom":
-        params[request_text_by_quotes[0]] = request_text_by_quotes[1]
-
-    if request_text_by_quotes[2] == "top" or request_text_by_quotes[2] == "bottom":
-        params[request_text_by_quotes[2]] = request_text_by_quotes[3]
+    if len(request_text_by_quotes) > 1:
+        param_1 = request_text_by_quotes[0].strip()
+        param_2 = request_text_by_quotes[2].strip()
+        if param_1 == "top" or param_1 == "bottom":
+            params[param_1] = request_text_by_quotes[1]
+        if param_2 == "top" or param_2 == "bottom":
+            params[param_2] = request_text_by_quotes[3]
 
     images = request_text_by_quotes[-1].split()
 
-    # request_text = " ".join(request_text.split())
     if len(images) == 0:
         render_message("Image required!")
 
@@ -395,10 +396,15 @@ def swap():
                     src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color
                 )
 
+            # Save the swapped image
             tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
             cv2.imwrite(tmp_file.name, dst_img)
 
-            meme_generator.generate_meme(dst_img, text_top=params.get("top", ""), text_bottom=params.get("bottom", ""))
+            # Redo the swapped image with the meme
+            meme_image = meme_generator.generate_meme(
+                tmp_file.name, text_top=params.get("top", ""), text_bottom=params.get("bottom", "")
+            )
+            meme_image.save(tmp_file.name)
 
             tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
 
