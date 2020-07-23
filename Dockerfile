@@ -5,7 +5,9 @@ WORKDIR $APP_HOME
 ENV PYTHONPATH /
 ENV DEBIAN_FRONTEND=noninteractive
 ARG frisbee_token 
+ARG swap_token 
 ENV FRISBEE_TOKEN=$frisbee_token
+ENV SWAP_TOKEN=$swap_token
 
 # Get necessary system packages
 RUN apt-get update \
