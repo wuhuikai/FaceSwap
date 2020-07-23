@@ -298,6 +298,17 @@ def snowball_outcomes(probability, current_user, target):
             message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
     return message
 
+def fetch_user_photo(user_id):
+    try:
+        response = requests.get(
+            "https://slack.com/api/users.profile.get", {"token": SWAP_TOKEN, "user": user_id}
+        )
+        return response.json()["profile"].get("image_original", None)
+    except Exception as e:
+        logging.info(e)
+        return render_message("Can't fetch Photo")
+
+
 
 @app.route("/swap", methods=["POST"])
 def swap():
