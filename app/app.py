@@ -342,20 +342,22 @@ def swap():
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
             if dst_user_handle_or_url.lower().startswith("http"):
-                download_with_user_agent(dst_user_handle_or_url, dest_img_file)
-                dst_img = cv2.imread(dest_img_file.name)
+                dst_image_url = dst_user_handle_or_url
             else:
                 dst_user = get_user_id(dst_user_handle_or_url)
-                photo_path = fetch_user_photo(dst_user)
-                download_with_user_agent(photo_path, dest_img_file)
+                dst_image_url = fetch_user_photo(dst_user)
+
+            download_with_user_agent(dst_image_url, dest_img_file)
+            dst_img = cv2.imread(dest_img_file.name)
 
             if src_user_handle_or_url.lower().startswith("http"):
-                download_with_user_agent(src_user_handle_or_url, src_img_file)
-                src_img = cv2.imread(src_img_file.name)
+                src_image_url = src_user_handle_or_url
             else:
-                dst_user = get_user_id(dst_user_handle_or_url)
-                photo_path = fetch_user_photo(dst_user)
-                download_with_user_agent(photo_path, src_img_file)
+                src_user = get_user_id(src_user_handle_or_url)
+                src_image_url = fetch_user_photo(src_user)
+
+            download_with_user_agent(src_image_url, src_img_file)
+            src_img = cv2.imread(src_img_file.name)
 
             src_points, src_shape, src_face = select_face(src_img)  # Select src face
             dest_faces = select_face_update(dst_img)  # Select dst face
