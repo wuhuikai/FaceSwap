@@ -347,6 +347,9 @@ def swap():
                 dst_user = get_user_id(dst_user_handle_or_url)
                 dst_image_url = fetch_user_photo(dst_user)
 
+            if not dst_image_url:
+                return render_message(f'Image not found for target image.')
+
             download_with_user_agent(dst_image_url, dest_img_file)
             dst_img = cv2.imread(dest_img_file.name)
 
@@ -355,6 +358,9 @@ def swap():
             else:
                 src_user = get_user_id(src_user_handle_or_url)
                 src_image_url = fetch_user_photo(src_user)
+
+            if not src_image_url:
+                return render_message(f'Image not found for source image.')
 
             download_with_user_agent(src_image_url, src_img_file)
             src_img = cv2.imread(src_img_file.name)
