@@ -318,17 +318,35 @@ def swap():
     logging.info(request.form)
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
-    request_text = " ".join(request_text.split())
-    dst_user_handle_or_url = request_text.split(" ")[0]
-    src_user_handle_or_url = request_text.split(" ")[1]
+    request_text_by_quotes = request_text.split('"')
+    params = {}
+    if request_text_by_quotes[0] == "top" or request_text_by_quotes[0] == "bottom":
+        params[request_text_by_quotes[0]] = request_text_by_quotes[1]
+
+    if request_text_by_quotes[2] == "top" or request_text_by_quotes[2] == "bottom":
+        params[request_text_by_quotes[2]] = request_text_by_quotes[3]
+
+    images = request_text_by_quotes[-1].split()
+
+    # request_text = " ".join(request_text.split())
+    if len(images) == 0:
+        render_message("Image required!")
+
+    elif len(images) == 1:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[0]
+
+    else:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[1]
 
     warp_2d = False
     correct_color = False
 
-    if warp_2d in request_text.split(" "):
+    if "warp_2d" in images:
         warp_2d = True
 
-    if correct_color in request_text.split(" "):
+    if "correct_color" in images:
         correct_color = True
 
     logging.info("Request: " + request_text)
