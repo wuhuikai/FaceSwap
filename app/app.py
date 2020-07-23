@@ -297,16 +297,14 @@ def snowball_outcomes(probability, current_user, target):
             message = f'As Simon would say, "learn to aim dude". So toxic. I apologize in his stead. You missed.'
     return message
 
+
 def fetch_user_photo(user_id):
     try:
-        response = requests.get(
-            "https://slack.com/api/users.profile.get", {"token": SWAP_TOKEN, "user": user_id}
-        )
+        response = requests.get("https://slack.com/api/users.profile.get", {"token": SWAP_TOKEN, "user": user_id})
         return response.json()["profile"].get("image_original", None)
     except Exception as e:
         logging.info(e)
         return render_message("Can't fetch Photo")
-
 
 
 @app.route("/swap", methods=["POST"])
@@ -347,7 +345,7 @@ def swap():
                 dst_image_url = fetch_user_photo(dst_user)
 
             if not dst_image_url:
-                return render_message(f'Image not found for target image.')
+                return render_message(f"Image not found for target image.")
 
             download_with_user_agent(dst_image_url, dest_img_file)
             dst_img = cv2.imread(dest_img_file.name)
@@ -359,7 +357,7 @@ def swap():
                 src_image_url = fetch_user_photo(src_user)
 
             if not src_image_url:
-                return render_message(f'Image not found for source image.')
+                return render_message(f"Image not found for source image.")
 
             download_with_user_agent(src_image_url, src_img_file)
             src_img = cv2.imread(src_img_file.name)
