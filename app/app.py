@@ -12,6 +12,7 @@ from flask import Flask, abort, jsonify, make_response, request, send_file
 
 from face.face_detection import select_face, select_face_update
 from face.face_swap import face_swap
+from meme.meme_generator import MemeGenerator
 from utils.helpers import download_with_user_agent
 
 NOT_FOUND = "Not found"
@@ -22,6 +23,7 @@ FRISBEE_HOLDER = {}
 TOSS_PROBABILITY = 0.8
 FRISBEE_TOKEN = os.environ.get("FRISBEE_TOKEN")
 SWAP_TOKEN = os.environ.get("SWAP_TOKEN")
+meme_generator = MemeGenerator()
 
 SNOWBALL_TABLE = {}
 
@@ -395,6 +397,8 @@ def swap():
 
             tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
             cv2.imwrite(tmp_file.name, dst_img)
+
+            meme_generator.generate_meme(dst_img, text_top=params.get("top", ""), text_bottom=params.get("bottom", ""))
 
             tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
 
