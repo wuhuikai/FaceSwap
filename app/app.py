@@ -3,6 +3,7 @@ import glob
 import logging
 import os
 import tempfile
+from datetime import datetime
 from random import random
 
 import cv2
@@ -22,7 +23,7 @@ FRISBEE_HOLDER = {}
 TOSS_PROBABILITY = 0.8
 FRISBEE_TOKEN = os.environ.get("FRISBEE_TOKEN")
 
-STATISTICS_TABLE = {}
+SNOWBALL_TABLE = {}
 
 app = Flask(__name__)
 
@@ -155,9 +156,14 @@ def snowball():
     request_text = " ".join(request_text.split())
 
     current_user = clean_name(request.form["user_name"])
+    target_name = clean_name(request_text)
 
-    if not STATISTICS_TABLE.get(current_user):
-        STATISTICS_TABLE[current_user] = {"Hit": 0, "Attempt": 0}
+    if target_name == current_user:
+        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
+        return render_message(message)
+
+    if not SNOWBALL_TABLE.get(current_user):
+        SNOWBALL_TABLE[current_user] = {"Hit": 0, "Attempt": 0, "Combo": 0}
 
     if "stats" == request_text:
         return render_stats(current_user)
@@ -165,12 +171,20 @@ def snowball():
     if "rankings" == request_text:
         return render_rankings()
 
-    target_name = clean_name(request_text)
-    if target_name == current_user:
-        message = f"Why are you trying to hit yourself silly? Throw a snowball at someone else!"
-        return render_message(message)
+    if not SNOWBALL_TABLE.get(target_name):
+        SNOWBALL_TABLE[target_name] = {"Hit": 0, "Attempt": 0, "Combo": 0}
 
-    message = outcomes(probability, current_user, target_name)
+    if SNOWBALL_TABLE[current_user].get("Stunned_Time"):
+        time_diff_in_seconds = (datetime.now() - SNOWBALL_TABLE[current_user]["Stunned_Time"]).seconds
+        if time_diff_in_seconds <= 300:
+            message = (
+                f"You are stunned because some guy threw a golden snowball at you and knocked you out. What a jerk!"
+            )
+            message += f"\n"
+            message += f"You can't do anything for the next {(300 - time_diff_in_seconds)} seconds"
+            return render_message(message)
+
+    message = snowball_outcomes(probability, current_user, target_name)
     return render_message(message)
 
 
@@ -192,11 +206,11 @@ def get_user_id(user_handle):
 
 def render_rankings():
     message = "You must throw at least once to be ranked.\n"
-    filtered_STATISTICS_TABLE = {k: v for k, v in STATISTICS_TABLE.items() if v["Attempt"] != 0}
+    filtered_SNOWBALL_TABLE = {k: v for k, v in SNOWBALL_TABLE.items() if v["Attempt"] != 0}
     rankings_table_by_hit_success = "".join(
         [
             f"{key} Successful Hit: {value['Hit']} Attempts: {value['Attempt']}\n"
-            for key, value in sorted(filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]["Hit"], reverse=True)
+            for key, value in sorted(filtered_SNOWBALL_TABLE.items(), key=lambda item: item[1]["Hit"], reverse=True)
         ][:10]
     )
 
@@ -204,7 +218,7 @@ def render_rankings():
         [
             f"{key} Accuracy: {value['Hit']/value['Attempt']:.2f}\n"
             for key, value in sorted(
-                filtered_STATISTICS_TABLE.items(), key=lambda item: item[1]["Hit"] / item[1]["Attempt"], reverse=True
+                filtered_SNOWBALL_TABLE.items(), key=lambda item: item[1]["Hit"] / item[1]["Attempt"], reverse=True
             )
         ][:10]
     )
@@ -213,10 +227,10 @@ def render_rankings():
 
 
 def render_stats(current_user):
-    if STATISTICS_TABLE[current_user]["Attempt"] == 0:
+    if SNOWBALL_TABLE[current_user]["Attempt"] == 0:
         return render_message("ERROR, DATA NOT FOUND \nAre we human? Or are we dancer?")
 
-    accuracy = STATISTICS_TABLE[current_user]["Hit"] / STATISTICS_TABLE[current_user]["Attempt"]
+    accuracy = SNOWBALL_TABLE[current_user]["Hit"] / SNOWBALL_TABLE[current_user]["Attempt"]
 
     if accuracy > 0.9:
         message = f"Turn off your hacks or you will get nerfed!"
@@ -227,14 +241,14 @@ def render_stats(current_user):
     elif accuracy > 0.1:
         message = f"Probably work on your aim during your freetime."
     else:
-        if STATISTICS_TABLE[current_user]["Attempt"] > 10:
+        if SNOWBALL_TABLE[current_user]["Attempt"] > 10:
             message = f"Hey buddy, everything alright? Consider bribing someone... You probably need help."
         else:
             message = f"Keep trying! May the odds always be in your favor!"
 
     stat_table = (
         "\n"
-        + "".join([f"{key}: {value}    " for key, value in STATISTICS_TABLE[current_user].items()])
+        + "".join([f"{key}: {value}    " for key, value in SNOWBALL_TABLE[current_user].items()])
         + f"\n {current_user} has an accuracy of {accuracy:.2f}"
     )
     return render_message(message + stat_table)
@@ -244,13 +258,31 @@ def render_message(message):
     return jsonify({"response_type": "in_channel", "text": f"{message}"})
 
 
-def outcomes(probability, current_user, target):
-    STATISTICS_TABLE[current_user]["Attempt"] += 1
+def snowball_outcomes(probability, current_user, target):
+    SNOWBALL_TABLE[current_user]["Attempt"] += 1
+    if SNOWBALL_TABLE[current_user]["Combo"] == 3:
+        message = (
+            f"You threw a snowball made of solid 24k gold. It hit {target} in the face and knocked them out for good."
+        )
+        message += f"\n"
+        message += (
+            f"It's honestly kind of messed up. {target} can't do anything snowball related for the next 5 minutes."
+        )
+        SNOWBALL_TABLE[target]["Stunned_Time"] = datetime.now()
+        SNOWBALL_TABLE[current_user]["Hit"] += 1
+        SNOWBALL_TABLE[current_user]["Combo"] = 0
+        return message
+
     if probability < HIT_PROBABILITY:
         message = f"You hit {target} square in the back of the head. {target} is secretly crying right now."
-        STATISTICS_TABLE[current_user]["Hit"] += 1
+        SNOWBALL_TABLE[current_user]["Hit"] += 1
+        SNOWBALL_TABLE[current_user]["Combo"] += 1
+        if SNOWBALL_TABLE[current_user]["Combo"] == 3:
+            message += "\n"
+            message += "You're on a streak! You get a golden snowball! Your next hit will prevent the person from throwing for 5 minutes!"  # noqa E501
     else:
         missing_probability = 1 - HIT_PROBABILITY
+        SNOWBALL_TABLE[current_user]["Combo"] = 0
         if probability < (0.3 * missing_probability + HIT_PROBABILITY):
             message = f"You tripped and failed to hit your target, {target} is laughing at you from afar."
         elif probability < (0.6 * missing_probability + HIT_PROBABILITY):
