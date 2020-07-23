@@ -311,8 +311,8 @@ def swap():
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
-    dst_name_or_url = request_text.split(" ")[0]
-    src_name_or_url = request_text.split(" ")[1]
+    dst_user_handle_or_url = request_text.split(" ")[0]
+    src_user_handle_or_url = request_text.split(" ")[1]
 
     warp_2d = False
     correct_color = False
@@ -324,23 +324,23 @@ def swap():
         correct_color = True
 
     logging.info("Request: " + request_text)
-    logging.info(dst_name_or_url)
-    logging.info(src_name_or_url)
+    logging.info(dst_user_handle_or_url)
+    logging.info(src_user_handle_or_url)
 
     # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
-            if dst_name_or_url.lower().startswith("http"):
-                download_with_user_agent(dst_name_or_url, dest_img_file)
+            if dst_user_handle_or_url.lower().startswith("http"):
+                download_with_user_agent(dst_user_handle_or_url, dest_img_file)
                 dst_img = cv2.imread(dest_img_file.name)
             else:
-                dst_img = cv2.imread("../people/" + _find_person(dst_name_or_url))
+                dst_img = cv2.imread("../people/" + _find_person(dst_user_handle_or_url))
 
-            if src_name_or_url.lower().startswith("http"):
-                download_with_user_agent(src_name_or_url, src_img_file)
+            if src_user_handle_or_url.lower().startswith("http"):
+                download_with_user_agent(src_user_handle_or_url, src_img_file)
                 src_img = cv2.imread(src_img_file.name)
             else:
-                src_img = cv2.imread("../people/" + _find_person(src_name_or_url))
+                src_img = cv2.imread("../people/" + _find_person(src_user_handle_or_url))
 
             src_points, src_shape, src_face = select_face(src_img)  # Select src face
             dest_faces = select_face_update(dst_img)  # Select dst face
