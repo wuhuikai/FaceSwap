@@ -9,7 +9,6 @@ from random import random
 import cv2
 import requests
 from flask import Flask, abort, jsonify, make_response, request, send_file
-from fuzzywuzzy import process
 
 from face.face_detection import select_face, select_face_update
 from face.face_swap import face_swap
@@ -408,20 +407,6 @@ def frisbee_outcomes(probability, target):
             message = f"1... 2... 3... LEIASA, the impartial referee that she is, in her great wisdom, called a stall. WTF it’s only been 3 seconds."  # noqa E501
 
     return success, message
-
-
-def _find_person(name):
-    if "|" in name:
-        file_name = name.split("|")[1].replace(">", "").replace(".", " ").title() + ".jpg"
-    else:
-        file_name = name.replace(">", "").replace(".", " ").title() + ".jpg"
-
-    logging.info(file_name)
-    if os.path.isfile("../people/" + file_name):
-        best_match = file_name
-    else:  # Fuzzy match names
-        best_match, _ = process.extractOne(name, PEOPLE)
-    return best_match
 
 
 if __name__ == "__main__":

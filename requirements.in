@@ -1,6 +1,5 @@
 dlib
 flask
-fuzzywuzzy
 gunicorn
 numpy
 opencv-contrib-python-headless
