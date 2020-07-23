@@ -17,6 +17,7 @@ markupsafe==1.1.1         # via jinja2
 numpy==1.18.1             # via -r requirements.in, opencv-contrib-python-headless, opencv-python-headless, scipy
 opencv-contrib-python-headless==4.2.0.32  # via -r requirements.in
 opencv-python-headless==4.2.0.32  # via -r requirements.in
+pillow==7.2.0             # via -r requirements.in
 python-levenshtein==0.12.0  # via -r requirements.in
 requests==2.23.0          # via -r requirements.in
 scipy==1.4.1              # via -r requirements.in
