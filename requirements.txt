@@ -9,7 +9,6 @@ chardet==3.0.4            # via requests
 click==7.0                # via flask
 dlib==19.19.0             # via -r requirements.in
 flask==1.1.1              # via -r requirements.in
-fuzzywuzzy==0.18.0        # via -r requirements.in
 gunicorn==20.0.4          # via -r requirements.in
 idna==2.9                 # via requests
 itsdangerous==1.1.0       # via flask

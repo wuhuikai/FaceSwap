@@ -9,7 +9,6 @@ from random import random
 import cv2
 import requests
 from flask import Flask, abort, jsonify, make_response, request, send_file
-from fuzzywuzzy import process
 
 from face.face_detection import select_face, select_face_update
 from face.face_swap import face_swap
@@ -22,6 +21,7 @@ HIT_PROBABILITY = 0.6
 FRISBEE_HOLDER = {}
 TOSS_PROBABILITY = 0.8
 FRISBEE_TOKEN = os.environ.get("FRISBEE_TOKEN")
+SWAP_TOKEN = os.environ.get("SWAP_TOKEN")
 
 SNOWBALL_TABLE = {}
 
@@ -298,6 +298,15 @@ def snowball_outcomes(probability, current_user, target):
     return message
 
 
+def fetch_user_photo(user_id):
+    try:
+        response = requests.get("https://slack.com/api/users.profile.get", {"token": SWAP_TOKEN, "user": user_id})
+        return response.json()["profile"].get("image_original", None)
+    except Exception as e:
+        logging.info(e)
+        return render_message("Can't fetch Photo")
+
+
 @app.route("/swap", methods=["POST"])
 def swap():
 
@@ -310,8 +319,8 @@ def swap():
     request_text = request.form["text"]
     request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
     request_text = " ".join(request_text.split())
-    dst_name_or_url = request_text.split(" ")[0]
-    src_name_or_url = request_text.split(" ")[1]
+    dst_user_handle_or_url = request_text.split(" ")[0]
+    src_user_handle_or_url = request_text.split(" ")[1]
 
     warp_2d = False
     correct_color = False
@@ -323,23 +332,35 @@ def swap():
         correct_color = True
 
     logging.info("Request: " + request_text)
-    logging.info(dst_name_or_url)
-    logging.info(src_name_or_url)
+    logging.info(dst_user_handle_or_url)
+    logging.info(src_user_handle_or_url)
 
     # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
-            if dst_name_or_url.lower().startswith("http"):
-                download_with_user_agent(dst_name_or_url, dest_img_file)
-                dst_img = cv2.imread(dest_img_file.name)
+            if dst_user_handle_or_url.lower().startswith("http"):
+                dst_image_url = dst_user_handle_or_url
             else:
-                dst_img = cv2.imread("../people/" + _find_person(dst_name_or_url))
+                dst_user = get_user_id(dst_user_handle_or_url)
+                dst_image_url = fetch_user_photo(dst_user)
 
-            if src_name_or_url.lower().startswith("http"):
-                download_with_user_agent(src_name_or_url, src_img_file)
-                src_img = cv2.imread(src_img_file.name)
+            if not dst_image_url:
+                return render_message(f"Image not found for target image.")
+
+            download_with_user_agent(dst_image_url, dest_img_file)
+            dst_img = cv2.imread(dest_img_file.name)
+
+            if src_user_handle_or_url.lower().startswith("http"):
+                src_image_url = src_user_handle_or_url
             else:
-                src_img = cv2.imread("../people/" + _find_person(src_name_or_url))
+                src_user = get_user_id(src_user_handle_or_url)
+                src_image_url = fetch_user_photo(src_user)
+
+            if not src_image_url:
+                return render_message(f"Image not found for source image.")
+
+            download_with_user_agent(src_image_url, src_img_file)
+            src_img = cv2.imread(src_img_file.name)
 
             src_points, src_shape, src_face = select_face(src_img)  # Select src face
             dest_faces = select_face_update(dst_img)  # Select dst face
@@ -384,20 +405,6 @@ def frisbee_outcomes(probability, target):
             message = f"1... 2... 3... LEIASA, the impartial referee that she is, in her great wisdom, called a stall. WTF it’s only been 3 seconds."  # noqa E501
 
     return success, message
-
-
-def _find_person(name):
-    if "|" in name:
-        file_name = name.split("|")[1].replace(">", "").replace(".", " ").title() + ".jpg"
-    else:
-        file_name = name.replace(">", "").replace(".", " ").title() + ".jpg"
-
-    logging.info(file_name)
-    if os.path.isfile("../people/" + file_name):
-        best_match = file_name
-    else:  # Fuzzy match names
-        best_match, _ = process.extractOne(name, PEOPLE)
-    return best_match
 
 
 if __name__ == "__main__":
