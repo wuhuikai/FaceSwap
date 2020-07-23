@@ -345,13 +345,17 @@ def swap():
                 download_with_user_agent(dst_user_handle_or_url, dest_img_file)
                 dst_img = cv2.imread(dest_img_file.name)
             else:
-                dst_img = cv2.imread("../people/" + _find_person(dst_user_handle_or_url))
+                dst_user = get_user_id(dst_user_handle_or_url)
+                photo_path = fetch_user_photo(dst_user)
+                download_with_user_agent(photo_path, dest_img_file)
 
             if src_user_handle_or_url.lower().startswith("http"):
                 download_with_user_agent(src_user_handle_or_url, src_img_file)
                 src_img = cv2.imread(src_img_file.name)
             else:
-                src_img = cv2.imread("../people/" + _find_person(src_user_handle_or_url))
+                dst_user = get_user_id(dst_user_handle_or_url)
+                photo_path = fetch_user_photo(dst_user)
+                download_with_user_agent(photo_path, src_img_file)
 
             src_points, src_shape, src_face = select_face(src_img)  # Select src face
             dest_faces = select_face_update(dst_img)  # Select dst face
