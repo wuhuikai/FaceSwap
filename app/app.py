@@ -371,8 +371,9 @@ def backgroundworker(response_url, dst_user_handle_or_url, src_user_handle_or_ur
             logging.info(tmp_file_encoded)
             logging.info(response_url)
             logging.info(json_return)
+            headers = {'Content-type': 'application/json'}
 
-            response = requests.post(response_url, data=json_return)
+            response = requests.post(response_url, data=json_return, headers=headers)
             response.raise_for_status()
 
             return
