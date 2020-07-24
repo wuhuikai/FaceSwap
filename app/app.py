@@ -5,6 +5,7 @@ import os
 import tempfile
 from datetime import datetime
 from random import random
+from threading import Thread
 
 import cv2
 import requests
@@ -309,59 +310,7 @@ def fetch_user_photo(user_id):
         return render_message("Can't fetch Photo")
 
 
-@app.route("/swap", methods=["POST"])
-def swap():
-
-    if not request.form:
-        abort(400)
-    if not request.form["text"]:
-        abort(400)
-
-    logging.info(request.form)
-    request_text = request.form["text"]
-    request_text = (
-        request_text.replace("\xa0", " ")
-        .replace("<", " ")
-        .replace(">", " ")
-        .replace("\u201d", '"')
-        .replace("\u201c", '"')
-    )
-    request_text_by_quotes = request_text.split('"')
-    params = {}
-    if len(request_text_by_quotes) > 1:
-        param_1 = request_text_by_quotes[0].strip()
-        param_2 = request_text_by_quotes[2].strip()
-        if param_1 == "top" or param_1 == "bottom":
-            params[param_1] = request_text_by_quotes[1]
-        if param_2 == "top" or param_2 == "bottom":
-            params[param_2] = request_text_by_quotes[3]
-
-    images = request_text_by_quotes[-1].split()
-
-    if len(images) == 0:
-        render_message("Image required!")
-
-    elif len(images) == 1:
-        dst_user_handle_or_url = images[0]
-        src_user_handle_or_url = images[0]
-
-    else:
-        dst_user_handle_or_url = images[0]
-        src_user_handle_or_url = images[1]
-
-    warp_2d = False
-    correct_color = False
-
-    if "warp_2d" in images:
-        warp_2d = True
-
-    if "correct_color" in images:
-        correct_color = True
-
-    logging.info("Request: " + request_text)
-    logging.info(dst_user_handle_or_url)
-    logging.info(src_user_handle_or_url)
-
+def backgroundworker(response_url, dst_user_handle_or_url, src_user_handle_or_url, warp_2d, correct_color, params):
     # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
@@ -420,9 +369,76 @@ def swap():
                 }
             )
             logging.info(tmp_file_encoded)
+            logging.info(response_url)
+            logging.info(json_return)
 
-            return (json_return, 200)
-    return make_response(jsonify({"error": BAD_REQUEST}), 400)
+            response = requests.post(response_url, data=json_return)
+            response.raise_for_status()
+
+            return
+
+
+@app.route("/swap", methods=["POST"])
+def swap():
+
+    if not request.form:
+        abort(400)
+    if not request.form["text"]:
+        abort(400)
+
+    logging.info(request.form)
+    response_url = request.form.get("response_url")
+    request_text = request.form["text"]
+    request_text = (
+        request_text.replace("\xa0", " ")
+        .replace("<", " ")
+        .replace(">", " ")
+        .replace("\u201d", '"')
+        .replace("\u201c", '"')
+    )
+    request_text_by_quotes = request_text.split('"')
+    params = {}
+    if len(request_text_by_quotes) > 1:
+        param_1 = request_text_by_quotes[0].strip()
+        param_2 = request_text_by_quotes[2].strip()
+        if param_1 == "top" or param_1 == "bottom":
+            params[param_1] = request_text_by_quotes[1]
+        if param_2 == "top" or param_2 == "bottom":
+            params[param_2] = request_text_by_quotes[3]
+
+    images = request_text_by_quotes[-1].split()
+
+    if len(images) == 0:
+        render_message("Image required!")
+
+    elif len(images) == 1:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[0]
+
+    else:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[1]
+
+    warp_2d = False
+    correct_color = False
+
+    if "warp_2d" in images:
+        warp_2d = True
+
+    if "correct_color" in images:
+        correct_color = True
+
+    logging.info("Request: " + request_text)
+    logging.info(dst_user_handle_or_url)
+    logging.info(src_user_handle_or_url)
+
+    thr = Thread(
+        target=backgroundworker,
+        args=[response_url, dst_user_handle_or_url, src_user_handle_or_url, warp_2d, correct_color, params],
+    )
+    thr.start()
+
+    return jsonify("request received", 202)
 
 
 def frisbee_outcomes(probability, target):
