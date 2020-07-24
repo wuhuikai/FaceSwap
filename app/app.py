@@ -12,6 +12,7 @@ from flask import Flask, abort, jsonify, make_response, request, send_file
 
 from face.face_detection import select_face, select_face_update
 from face.face_swap import face_swap
+from meme.meme_generator import MemeGenerator
 from utils.helpers import download_with_user_agent
 
 NOT_FOUND = "Not found"
@@ -22,6 +23,7 @@ FRISBEE_HOLDER = {}
 TOSS_PROBABILITY = 0.8
 FRISBEE_TOKEN = os.environ.get("FRISBEE_TOKEN")
 SWAP_TOKEN = os.environ.get("SWAP_TOKEN")
+meme_generator = MemeGenerator()
 
 SNOWBALL_TABLE = {}
 
@@ -317,18 +319,43 @@ def swap():
 
     logging.info(request.form)
     request_text = request.form["text"]
-    request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
-    request_text = " ".join(request_text.split())
-    dst_user_handle_or_url = request_text.split(" ")[0]
-    src_user_handle_or_url = request_text.split(" ")[1]
+    request_text = (
+        request_text.replace("\xa0", " ")
+        .replace("<", " ")
+        .replace(">", " ")
+        .replace("\u201d", '"')
+        .replace("\u201c", '"')
+    )
+    request_text_by_quotes = request_text.split('"')
+    params = {}
+    if len(request_text_by_quotes) > 1:
+        param_1 = request_text_by_quotes[0].strip()
+        param_2 = request_text_by_quotes[2].strip()
+        if param_1 == "top" or param_1 == "bottom":
+            params[param_1] = request_text_by_quotes[1]
+        if param_2 == "top" or param_2 == "bottom":
+            params[param_2] = request_text_by_quotes[3]
+
+    images = request_text_by_quotes[-1].split()
+
+    if len(images) == 0:
+        render_message("Image required!")
+
+    elif len(images) == 1:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[0]
+
+    else:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[1]
 
     warp_2d = False
     correct_color = False
 
-    if warp_2d in request_text.split(" "):
+    if "warp_2d" in images:
         warp_2d = True
 
-    if correct_color in request_text.split(" "):
+    if "correct_color" in images:
         correct_color = True
 
     logging.info("Request: " + request_text)
@@ -365,18 +392,24 @@ def swap():
             src_points, src_shape, src_face = select_face(src_img)  # Select src face
             dest_faces = select_face_update(dst_img)  # Select dst face
 
-            if src_points is None:
+            if src_points is not None:
+                for face in dest_faces:
+                    dst_points, dst_shape, dst_face = face
+                    dst_img = face_swap(
+                        src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color
+                    )
+            else:
                 logging.info("Detect 0 Face !!!")
-                abort(400)
 
-            for face in dest_faces:
-                dst_points, dst_shape, dst_face = face
-                dst_img = face_swap(
-                    src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color
-                )
-
+            # Save the swapped image
             tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)
             cv2.imwrite(tmp_file.name, dst_img)
+
+            # Redo the swapped image with the meme
+            meme_image = meme_generator.generate_meme(
+                tmp_file.name, text_top=params.get("top", ""), text_bottom=params.get("bottom", "")
+            )
+            meme_image.save(tmp_file.name)
 
             tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
 

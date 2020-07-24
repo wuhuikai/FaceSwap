@@ -4,6 +4,7 @@ gunicorn
 numpy
 opencv-contrib-python-headless
 opencv-python-headless
+Pillow
 python-Levenshtein
 requests
 scipy

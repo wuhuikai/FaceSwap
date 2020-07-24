@@ -151,4 +151,4 @@ media
 static
 
 # Project related ignores (place project related ignores below here)
-people/
+.secrets
