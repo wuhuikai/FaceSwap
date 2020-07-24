@@ -451,7 +451,7 @@ def swap():
     )
     thr.start()
 
-    return make_response(jsonify({"text": "message received"}), 202)
+    return make_response(jsonify({"text": f'/garybot {request.form["text"]}'}), 202)
 
 
 def frisbee_outcomes(probability, target):
