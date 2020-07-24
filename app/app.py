@@ -311,7 +311,9 @@ def fetch_user_photo(user_id):
         return render_message("Can't fetch Photo")
 
 
-def backgroundworker(response_url, dst_user_handle_or_url, src_user_handle_or_url, warp_2d, correct_color, params):
+def backgroundworker(
+    response_url, dst_user_handle_or_url, src_user_handle_or_url, warp_2d, correct_color, params, garybot_command, user
+):
     # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
@@ -372,9 +374,16 @@ def backgroundworker(response_url, dst_user_handle_or_url, src_user_handle_or_ur
                                 "blocks": [
                                     {
                                         "type": "image",
+                                        "title": {"type": "plain_text", "text": f"{garybot_command}"},
                                         "alt_text": "Use it at your own discretion...",
                                         "image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}",
-                                    }
+                                    },
+                                    {
+                                        "type": "context",
+                                        "elements": [
+                                            {"type": "plain_text", "text": f"Submitted by: {user}", "emoji": True}
+                                        ],
+                                    },
                                 ],
                             }
                         ],
@@ -444,14 +453,24 @@ def swap():
     logging.info("Request: " + request_text)
     logging.info(f"dst_image/url: {dst_user_handle_or_url}")
     logging.info(f"src_image/url: {src_user_handle_or_url}")
-
+    garybot_command = f'/garybot {request.form["text"]}'
+    user = request.form["user_name"].replace(".", " ").title()
     thr = Thread(
         target=backgroundworker,
-        args=[response_url, dst_user_handle_or_url, src_user_handle_or_url, warp_2d, correct_color, params],
+        args=[
+            response_url,
+            dst_user_handle_or_url,
+            src_user_handle_or_url,
+            warp_2d,
+            correct_color,
+            params,
+            garybot_command,
+            user,
+        ],
     )
     thr.start()
 
-    return make_response(jsonify({"text": f'/garybot {request.form["text"]}'}), 202)
+    return make_response(jsonify({"text": garybot_command}), 202)
 
 
 def frisbee_outcomes(probability, target):
