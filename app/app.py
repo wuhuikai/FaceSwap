@@ -1,5 +1,6 @@
 import base64
 import glob
+import json
 import logging
 import os
 import tempfile
@@ -362,21 +363,32 @@ def backgroundworker(response_url, dst_user_handle_or_url, src_user_handle_or_ur
 
             tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
 
-            json_return = jsonify(
-                {
-                    "response_type": "in_channel",
-                    "attachments": [{"image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}"}],
-                }
-            )
-            logging.info(tmp_file_encoded)
-            logging.info(response_url)
-            logging.info(json_return)
-            headers = {'Content-type': 'application/json'}
+            with app.app_context():
+                json_return = json.dumps(
+                    {
+                        "response_type": "in_channel",
+                        "attachments": [
+                            {
+                                "blocks": [
+                                    {
+                                        "type": "image",
+                                        "alt_text": "Use it at your own discretion...",
+                                        "image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                )
+                logging.info(tmp_file_encoded)
+                logging.info(response_url)
+                logging.info(json_return)
+                headers = {"Content-type": "application/json"}
 
-            response = requests.post(response_url, data=json_return, headers=headers)
-            response.raise_for_status()
+                response = requests.post(response_url, data=json_return, headers=headers)
+                response.raise_for_status()
 
-            return
+                return
 
 
 @app.route("/swap", methods=["POST"])
@@ -439,7 +451,7 @@ def swap():
     )
     thr.start()
 
-    return make_response(jsonify({"text": "message received"}) 202)
+    return make_response(jsonify({"text": "message received"}), 202)
 
 
 def frisbee_outcomes(probability, target):
