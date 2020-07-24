@@ -319,7 +319,13 @@ def swap():
 
     logging.info(request.form)
     request_text = request.form["text"]
-    request_text = request_text.replace("\xa0", " ").replace("<", " ").replace(">", " ")
+    request_text = (
+        request_text.replace("\xa0", " ")
+        .replace("<", " ")
+        .replace(">", " ")
+        .replace("\u201d", '"')
+        .replace("\u201c", '"')
+    )
     request_text_by_quotes = request_text.split('"')
     params = {}
     if len(request_text_by_quotes) > 1:
@@ -386,15 +392,14 @@ def swap():
             src_points, src_shape, src_face = select_face(src_img)  # Select src face
             dest_faces = select_face_update(dst_img)  # Select dst face
 
-            if src_points is None:
+            if src_points is not None:
+                for face in dest_faces:
+                    dst_points, dst_shape, dst_face = face
+                    dst_img = face_swap(
+                        src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color
+                    )
+            else:
                 logging.info("Detect 0 Face !!!")
-                abort(400)
-
-            for face in dest_faces:
-                dst_points, dst_shape, dst_face = face
-                dst_img = face_swap(
-                    src_face, dst_face, src_points, dst_points, dst_shape, dst_img, warp_2d, correct_color
-                )
 
             # Save the swapped image
             tmp_file = tempfile.NamedTemporaryFile(suffix=".jpg", delete=False)

@@ -1,9 +1,13 @@
+import os
+
 from PIL import Image, ImageDraw, ImageFont
 
 
 class MemeGenerator:
-    def __init__(self, font="Impact.ttf"):
-        self.font_name = font
+    def __init__(self, font="impact.ttf"):
+        this_dir = os.path.dirname(os.path.realpath(__file__))
+        font_file = os.path.join(this_dir, font)
+        self.font_name = font_file
 
     def generate_text_array(self, font, text, img_width, font_cushion):
         font_size = font.getsize(text)
@@ -75,7 +79,7 @@ class MemeGenerator:
                 y = y_start + cnt * font_height  # Calculate the starting location
                 self._write_meme(draw, top_x, border_size, y, text, font)  # Draw the text out
 
-        if len(text_top) > 0:
+        if len(text_bottom) > 0:
             texts_bottom = self.generate_text_array(font, text_bottom, image.width, font_cushion)
             texts_bottom.reverse()
             y_start = image.height - font_cushion - font_height
