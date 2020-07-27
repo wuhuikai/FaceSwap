@@ -1,10 +1,12 @@
 import base64
 import glob
+import json
 import logging
 import os
 import tempfile
 from datetime import datetime
 from random import random
+from threading import Thread
 
 import cv2
 import requests
@@ -140,7 +142,7 @@ def fetch_member(current_channel_id):
         )
         return response.json()["members"]
     except Exception as e:
-        logging.info(e)
+        logging.info(f"failed to fetch member list: {e}")
         return render_message("Can't use in DMs")
 
 
@@ -305,63 +307,13 @@ def fetch_user_photo(user_id):
         response = requests.get("https://slack.com/api/users.profile.get", {"token": SWAP_TOKEN, "user": user_id})
         return response.json()["profile"].get("image_original", None)
     except Exception as e:
-        logging.info(e)
+        logging.info(f"failed to fetch profile image: {e}")
         return render_message("Can't fetch Photo")
 
 
-@app.route("/swap", methods=["POST"])
-def swap():
-
-    if not request.form:
-        abort(400)
-    if not request.form["text"]:
-        abort(400)
-
-    logging.info(request.form)
-    request_text = request.form["text"]
-    request_text = (
-        request_text.replace("\xa0", " ")
-        .replace("<", " ")
-        .replace(">", " ")
-        .replace("\u201d", '"')
-        .replace("\u201c", '"')
-    )
-    request_text_by_quotes = request_text.split('"')
-    params = {}
-    if len(request_text_by_quotes) > 1:
-        param_1 = request_text_by_quotes[0].strip()
-        param_2 = request_text_by_quotes[2].strip()
-        if param_1 == "top" or param_1 == "bottom":
-            params[param_1] = request_text_by_quotes[1]
-        if param_2 == "top" or param_2 == "bottom":
-            params[param_2] = request_text_by_quotes[3]
-
-    images = request_text_by_quotes[-1].split()
-
-    if len(images) == 0:
-        render_message("Image required!")
-
-    elif len(images) == 1:
-        dst_user_handle_or_url = images[0]
-        src_user_handle_or_url = images[0]
-
-    else:
-        dst_user_handle_or_url = images[0]
-        src_user_handle_or_url = images[1]
-
-    warp_2d = False
-    correct_color = False
-
-    if "warp_2d" in images:
-        warp_2d = True
-
-    if "correct_color" in images:
-        correct_color = True
-
-    logging.info("Request: " + request_text)
-    logging.info(dst_user_handle_or_url)
-    logging.info(src_user_handle_or_url)
-
+def backgroundworker(
+    response_url, dst_user_handle_or_url, src_user_handle_or_url, warp_2d, correct_color, params, garybot_command, user
+):
     # Need to use a helper to download the images to fake a browser (some websites block straight downloads)
     with tempfile.NamedTemporaryFile(suffix=".jpg") as dest_img_file:
         with tempfile.NamedTemporaryFile(suffix=".jpg") as src_img_file:
@@ -413,16 +365,112 @@ def swap():
 
             tmp_file_encoded = base64.b64encode(tmp_file.name.encode("utf-8")).decode("utf-8")
 
-            json_return = jsonify(
-                {
-                    "response_type": "in_channel",
-                    "attachments": [{"image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}"}],
-                }
-            )
-            logging.info(tmp_file_encoded)
+            with app.app_context():
+                json_return = json.dumps(
+                    {
+                        "response_type": "in_channel",
+                        "attachments": [
+                            {
+                                "blocks": [
+                                    {
+                                        "type": "image",
+                                        "title": {"type": "plain_text", "text": f"{garybot_command}"},
+                                        "alt_text": "Use it at your own discretion...",
+                                        "image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}",
+                                    },
+                                    {
+                                        "type": "context",
+                                        "elements": [
+                                            {"type": "plain_text", "text": f"Submitted by: {user}", "emoji": True}
+                                        ],
+                                    },
+                                ],
+                            }
+                        ],
+                    }
+                )
+                logging.info(f"tmp_file_encoded: {tmp_file_encoded}")
+                logging.info(f"response_url: {response_url}")
+                logging.info(f"json_return: {json_return}")
+                headers = {"Content-type": "application/json"}
 
-            return (json_return, 200)
-    return make_response(jsonify({"error": BAD_REQUEST}), 400)
+                response = requests.post(response_url, data=json_return, headers=headers)
+                response.raise_for_status()
+
+                return
+
+
+@app.route("/swap", methods=["POST"])
+def swap():
+
+    if not request.form:
+        abort(400)
+    if not request.form["text"]:
+        abort(400)
+
+    logging.info(f"request_form: {request.form}")
+    response_url = request.form.get("response_url")
+    request_text = request.form["text"]
+    request_text = (
+        request_text.replace("\xa0", " ")
+        .replace("<", " ")
+        .replace(">", " ")
+        .replace("\u201d", '"')
+        .replace("\u201c", '"')
+    )
+    request_text_by_quotes = request_text.split('"')
+    params = {}
+    if len(request_text_by_quotes) > 1:
+        param_1 = request_text_by_quotes[0].strip()
+        param_2 = request_text_by_quotes[2].strip()
+        if param_1 == "top" or param_1 == "bottom":
+            params[param_1] = request_text_by_quotes[1]
+        if param_2 == "top" or param_2 == "bottom":
+            params[param_2] = request_text_by_quotes[3]
+
+    images = request_text_by_quotes[-1].split()
+
+    if len(images) == 0:
+        render_message("Image required!")
+
+    elif len(images) == 1:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[0]
+
+    else:
+        dst_user_handle_or_url = images[0]
+        src_user_handle_or_url = images[1]
+
+    warp_2d = False
+    correct_color = False
+
+    if "warp_2d" in images:
+        warp_2d = True
+
+    if "correct_color" in images:
+        correct_color = True
+
+    logging.info("Request: " + request_text)
+    logging.info(f"dst_image/url: {dst_user_handle_or_url}")
+    logging.info(f"src_image/url: {src_user_handle_or_url}")
+    garybot_command = f'/garybot {request.form["text"]}'
+    user = request.form["user_name"].replace(".", " ").title()
+    thr = Thread(
+        target=backgroundworker,
+        args=[
+            response_url,
+            dst_user_handle_or_url,
+            src_user_handle_or_url,
+            warp_2d,
+            correct_color,
+            params,
+            garybot_command,
+            user,
+        ],
+    )
+    thr.start()
+
+    return make_response(jsonify({"text": garybot_command}), 202)
 
 
 def frisbee_outcomes(probability, target):
