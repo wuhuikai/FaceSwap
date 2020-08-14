@@ -373,8 +373,14 @@ def backgroundworker(
                             {
                                 "blocks": [
                                     {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": f"{garybot_command}"
+                                        }
+                                    },
+                                    {
                                         "type": "image",
-                                        "title": {"type": "plain_text", "text": f"{garybot_command}"},
                                         "alt_text": "Use it at your own discretion...",
                                         "image_url": f"https://gary-robot.herokuapp.com/image/{tmp_file_encoded}",
                                     },
