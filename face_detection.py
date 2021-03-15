@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import dlib
 import numpy as np
@@ -12,7 +14,7 @@ def face_detection(img,upsample_times=1):
 
     return faces
 
-PREDICTOR_PATH = 'models/shape_predictor_68_face_landmarks.dat'
+PREDICTOR_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models/shape_predictor_68_face_landmarks.dat')
 predictor = dlib.shape_predictor(PREDICTOR_PATH)
 ## Face and points detection
 def face_points_detection(img, bbox:dlib.rectangle):
