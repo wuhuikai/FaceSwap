@@ -3,7 +3,7 @@ import os
 import cv2
 import argparse
 
-from face_detection import select_face
+from face_detection import select_face, select_all_faces
 from face_swap import face_swap
 
 
@@ -24,13 +24,17 @@ if __name__ == '__main__':
     # Select src face
     src_points, src_shape, src_face = select_face(src_img)
     # Select dst face
-    dst_points, dst_shape, dst_face = select_face(dst_img)
+    dst_faceBoxes = select_all_faces(dst_img)
 
-    if src_points is None or dst_points is None:
+    if dst_faceBoxes is None:
         print('Detect 0 Face !!!')
         exit(-1)
 
-    output = face_swap(src_face, dst_face, src_points, dst_points, dst_shape, dst_img, args)
+    output = dst_img
+    for k, dst_face in dst_faceBoxes.items():
+        output = face_swap(src_face, dst_face["face"], src_points,
+                           dst_face["points"], dst_face["shape"],
+                           output, args)
 
     dir_path = os.path.dirname(args.out)
     if not os.path.isdir(dir_path):
