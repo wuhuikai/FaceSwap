@@ -68,3 +68,28 @@ def select_face(im, r=10, choose=True):
     w, h = min(right + r, im_h) - x, min(bottom + r, im_w) - y
 
     return points - np.asarray([[x, y]]), (x, y, w, h), im[y:y + h, x:x + w]
+
+
+def select_all_faces(im, r=10):
+    faces = face_detection(im)
+
+    if len(faces) == 0:
+        return None
+
+    faceBoxes = {k : {"points" : None,
+                      "shape" : None,
+                      "face" : None} for k in range(len(faces))}
+    for i, bbox in enumerate(faces):
+        points = np.asarray(face_points_detection(im, bbox))
+
+        im_w, im_h = im.shape[:2]
+        left, top = np.min(points, 0)
+        right, bottom = np.max(points, 0)
+
+        x, y = max(0, left - r), max(0, top - r)
+        w, h = min(right + r, im_h) - x, min(bottom + r, im_w) - y
+        faceBoxes[i]["points"] = points - np.asarray([[x, y]])
+        faceBoxes[i]["shape"] = (x, y, w, h)
+        faceBoxes[i]["face"] = im[y:y + h, x:x + w]
+
+    return faceBoxes
