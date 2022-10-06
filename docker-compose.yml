@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  face-swap:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: john-wick-face-swap
+    volumes:
+      - ./videos/:/app/videos
+

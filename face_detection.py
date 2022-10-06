@@ -1,3 +1,4 @@
+from time import time
 import cv2
 import dlib
 import numpy as np
@@ -8,6 +9,9 @@ def face_detection(img,upsample_times=1):
     # second argument indicates that we should upsample the image 1 time. This
     # will make everything bigger and allow us to detect more faces.
     detector = dlib.get_frontal_face_detector()
+    print(detector)
+    time.sleep(int(20))
+    # input('Let us wait for user input. Let me know how many seconds to sleep now.\n')
     faces = detector(img, upsample_times)
 
     return faces
