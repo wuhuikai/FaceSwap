@@ -5,7 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    tty: true
     container_name: john-wick-face-swap
     volumes:
-      - ./videos/:/app/videos
+      - .:/app
 

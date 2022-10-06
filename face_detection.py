@@ -1,4 +1,4 @@
-from time import time
+from time import sleep
 import cv2
 import dlib
 import numpy as np
@@ -10,13 +10,13 @@ def face_detection(img,upsample_times=1):
     # will make everything bigger and allow us to detect more faces.
     detector = dlib.get_frontal_face_detector()
     print(detector)
-    time.sleep(int(20))
+    sleep(int(20))
     # input('Let us wait for user input. Let me know how many seconds to sleep now.\n')
     faces = detector(img, upsample_times)
 
     return faces
 
-PREDICTOR_PATH = 'models/shape_predictor_68_face_landmarks.dat'
+PREDICTOR_PATH = 'predictors/shape_predictor_68_face_landmarks.dat'
 predictor = dlib.shape_predictor(PREDICTOR_PATH)
 ## Face and points detection
 def face_points_detection(img, bbox:dlib.rectangle):

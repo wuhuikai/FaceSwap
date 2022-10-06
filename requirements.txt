@@ -1,4 +1,4 @@
 opencv-python >= 4.6.0.66
-dlib >= 19.23.0
-numpy >= 1.13.1
-scipy >= 0.18.0
+dlib >= 19.24.0
+numpy >= 1.23.3
+scipy >= 1.9.1
